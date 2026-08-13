@@ -44,7 +44,11 @@ function serveStatic(req, res){
   if(!filePath.startsWith(ROOT)){ res.writeHead(403); return res.end('Forbidden'); }
   fs.readFile(filePath, (err, data) => {
     if(err){ res.writeHead(404); return res.end('Not found'); }
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(filePath)] || 'application/octet-stream' });
+    res.writeHead(200, {
+      'Content-Type': MIME[path.extname(filePath)] || 'application/octet-stream',
+      // 개발 중에는 항상 최신 파일을 받도록 캐시를 끈다
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+    });
     res.end(data);
   });
 }

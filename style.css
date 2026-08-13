@@ -130,15 +130,46 @@ button{font-family:inherit;cursor:pointer}
 .stage{display:grid;grid-template-columns:1fr 340px;gap:14px;padding:14px 16px 22px}
 @media(max-width:940px){.stage{grid-template-columns:1fr}}
 
-/* ---------- office floor ---------- */
+/* ═══════════ 사무실 도면 (절대 좌표 배치) ═══════════ */
 .floor{
   position:relative;
-  background:
-    repeating-linear-gradient(0deg,transparent 0 39px,rgba(0,0,0,.035) 39px 40px),
-    repeating-linear-gradient(90deg,transparent 0 39px,rgba(0,0,0,.035) 39px 40px),
-    var(--floor-2);
-  border:3px solid var(--line);border-radius:12px;padding:14px;
+  background:var(--floor-2);
+  border:3px solid var(--line);border-radius:12px;padding:10px;
+  overflow:auto;
 }
+.plan{
+  position:relative;
+  background:
+    repeating-linear-gradient(0deg,transparent 0 43px,rgba(0,0,0,.03) 43px 44px),
+    repeating-linear-gradient(90deg,transparent 0 43px,rgba(0,0,0,.03) 43px 44px),
+    var(--floor-2);
+  border-radius:8px;
+}
+/* 방은 좌표로 놓인다 */
+.room,.room2,.ceoRoom,.hqRoom{position:absolute;box-sizing:border-box}
+
+/* ── 복도(길) — 바닥색을 달리해 길처럼 보이게 한다 ── */
+.corridorV,.corridorH{
+  position:absolute;pointer-events:none;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.5) 0 20px, rgba(240,236,246,.5) 20px 40px),
+    #EFEBF4;
+  box-shadow:inset 0 0 0 1px rgba(180,168,196,.45);
+}
+.corridorV{border-radius:6px}
+.corridorH{border-radius:4px}
+/* 복도 중앙선 */
+.corridorV:after{
+  content:"";position:absolute;left:50%;top:8px;bottom:8px;width:2px;margin-left:-1px;
+  background:repeating-linear-gradient(180deg, rgba(183,168,194,.7) 0 12px, transparent 12px 26px);
+}
+
+/* ── 방 문 (복도로 통하는 곳) ── */
+.room__door,.room__doorL,.room__doorB{position:absolute;background:#CFC3DA;border-radius:2px}
+.room__door {right:-3px;width:6px;height:38px}          /* 왼쪽 방: 오른쪽 벽에 문 */
+.side-right .room__door{right:auto;left:-3px}            /* 오른쪽 방: 왼쪽 벽에 문 */
+.room__doorL{left:-3px;width:6px;height:38px}            /* 맨 오른쪽 방: 왼쪽 벽 */
+.room__doorB{left:50%;bottom:-3px;transform:translateX(-50%);width:44px;height:6px}
 
 /* ═══════════ 전신 캐릭터 (C 국면) ═══════════
    모든 동작은 CSS로 처리한다 — 토큰을 쓰지 않는다. */
@@ -199,15 +230,29 @@ button{font-family:inherit;cursor:pointer}
 .char--walk .torso{animation:bob .52s ease-in-out infinite}
 .char--walk .shadow{transform-origin:center;animation:shadowPulse .52s ease-in-out infinite}
 
-/* ---------- 캐릭터 이동 (걷기 오버레이) ---------- */
-#walkers{position:absolute;inset:0;pointer-events:none;z-index:30}
+/* ---------- 캐릭터 이동 (걷기 오버레이) ----------
+   위치는 transform(translate3d)으로만 바꾼다 — left/top 애니메이션 금지. */
+.walkers{position:absolute;inset:0;pointer-events:none;z-index:30}
 .walker{
-  position:absolute;top:0;left:0;width:40px;height:65px;
-  transform:translate(-50%,-80%);
+  position:absolute;top:0;left:0;width:0;height:0;
+  will-change:transform;
+}
+.walker .char{
+  width:40px;height:65px;
+  transform:translate(-50%,-86%);
   filter:drop-shadow(0 4px 5px rgba(0,0,0,.3));
 }
 /* 진행 방향에 따라 좌우 반전 */
-.walker.flip .char{transform:scaleX(-1)}
+.walker.flip .char{transform:translate(-50%,-86%) scaleX(-1)}
+
+/* 모션 최소화 설정이면 걷기 동작을 끄고 즉시 이동한다 */
+@media (prefers-reduced-motion: reduce){
+  .char--walk .leg--f,.char--walk .leg--b,
+  .char--walk .arm--f,.char--walk .arm--b,
+  .char--walk .head,.char--walk .torso,.char--walk .shadow,
+  .char .eye,.char .torso,.char .head{animation:none !important}
+  .doorLeaf{transition:none !important}
+}
 
 /* 머리 위 상태 표시 — 카드 안쪽 상단에 둔다 */
 .statusTag{
@@ -228,21 +273,20 @@ button{font-family:inherit;cursor:pointer}
 
 /* ---------- 대표실 (executive office) ---------- */
 .ceoRoom{
-  position:relative;overflow:hidden;
+  overflow:hidden;
   background:
     radial-gradient(140% 120% at 18% 0%, rgba(231,192,102,.14), transparent 55%),
     linear-gradient(155deg, var(--exec-wall-1), var(--exec-wall-2));
   border:3px solid var(--exec-gold);border-radius:14px;
   box-shadow:0 0 0 5px rgba(231,192,102,.14), 0 10px 26px rgba(20,10,30,.35);
-  padding:14px 18px 16px;margin-bottom:12px;
-  min-height:190px;
+  padding:10px 14px 12px;
 }
 .ceoRoom__label{
-  display:flex;align-items:center;gap:8px;
-  color:var(--exec-gold);font-size:12px;letter-spacing:1px;margin-bottom:4px;
+  display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;
+  color:var(--exec-gold);font-size:10px;letter-spacing:.5px;margin-bottom:2px;
 }
-.ceoRoom__label .crown{width:14px;height:14px;flex:none}
-.ceoRoom__label .en{color:#B7A9D6;font-size:9px;letter-spacing:1.5px}
+.ceoRoom__label .crown{width:12px;height:12px;flex:none}
+.ceoRoom__label .en{color:#B7A9D6;font-size:7px;letter-spacing:1px}
 .ceoRoom__present{
   margin-left:auto;display:flex;align-items:center;gap:5px;
   font-size:10px;color:#C9E8D8;
@@ -329,17 +373,17 @@ button{font-family:inherit;cursor:pointer}
 
 /* ---------- 본부장실 ---------- */
 .hqRoom{
-  position:relative;overflow:hidden;
+  overflow:hidden;
   background:linear-gradient(150deg,#3A3350,#262034);
   border:2px solid #6E6288;border-radius:12px;
   box-shadow:0 0 0 3px rgba(110,98,136,.16), 0 6px 16px rgba(20,10,30,.28);
-  padding:10px 14px 12px;margin-bottom:12px;
+  padding:8px 12px 10px;
 }
 .hqRoom__label{
-  display:flex;align-items:center;gap:8px;
-  color:#CFC3E8;font-size:11px;letter-spacing:.8px;margin-bottom:2px;
+  display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;
+  color:#CFC3E8;font-size:10px;letter-spacing:.5px;margin-bottom:1px;
 }
-.hqRoom__label .en{color:#8C7FAD;font-size:9px;letter-spacing:1.4px}
+.hqRoom__label .en{color:#8C7FAD;font-size:7px;letter-spacing:1px}
 .hqRoom__present{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:10px;color:#C9E8D8}
 .hqRoom__present i{width:6px;height:6px;border-radius:50%;background:var(--mint);animation:pulse 1.6s infinite}
 .hqRoom__scene{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
@@ -369,20 +413,33 @@ button{font-family:inherit;cursor:pointer}
 }
 .zoneLabel:after{content:"";flex:1;height:1px;background:var(--line)}
 
-.queueRow{
-  display:flex;align-items:center;gap:8px;margin:2px 4px 14px;
-  font-size:10px;color:var(--ink-2);
+/* ═══════════ 대표실 앞 보고 대기줄 ═══════════
+   바닥에 발자국이 그려져 있고, 대기자는 세로로 줄을 선다. */
+.queueMarks,.queueLayer{position:absolute;inset:0;pointer-events:none}
+.queueLayer{z-index:26}
+.qmark{
+  position:absolute;transform:translate(-50%,-50%);
+  color:var(--slate);display:flex;align-items:center;gap:3px;opacity:.75;
 }
-.queueRow .ql{color:var(--ink-2);margin-right:2px}
-.queueRow .qslot{
-  width:26px;height:40px;border:2px dashed var(--line);border-radius:5px;
-  display:flex;align-items:flex-end;justify-content:center;font-size:9px;color:var(--ink-2);
-  background:var(--room);padding-bottom:3px;
+.qmark span{font-size:8px;color:var(--slate)}
+.qmark.occ{color:var(--rose);opacity:1}
+.qmark.occ span{color:var(--rose)}
+.queueLabel{
+  position:absolute;font-size:9px;color:var(--ink-2);white-space:nowrap;
+  background:rgba(252,249,253,.85);border:1px solid var(--line);
+  border-radius:999px;padding:1px 7px;
 }
-.queueRow .qslot .char{width:22px;height:36px}
-.queueRow .qslot.occ{
-  border-style:solid;border-color:var(--rose);background:#FDF0F5;
-  align-items:center;padding-bottom:0;
+/* 줄 서 있는 사람 */
+.queuer{
+  position:absolute;width:0;height:0;
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.queuer .char{width:26px;height:42px;transform:translate(-50%,-62%);filter:drop-shadow(0 3px 4px rgba(0,0,0,.28))}
+.queuer__no{
+  position:absolute;left:0;top:-36px;transform:translateX(-50%);
+  width:15px;height:15px;border-radius:50%;background:var(--rose);color:#fff;
+  font-size:9px;line-height:15px;text-align:center;
+  box-shadow:0 2px 4px rgba(0,0,0,.25);z-index:2;
 }
 /* 줄 서서 대기 — 걷지 않고 서 있는다 (호흡·눈 깜박임은 유지) */
 .char--idle .leg--f,.char--idle .leg--b,
@@ -397,15 +454,12 @@ button{font-family:inherit;cursor:pointer}
   border:1px dashed var(--line);opacity:.7;
 }
 
-.teamGrid{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-content:start;
-  margin-bottom:14px;
-}
-@media(max-width:1280px){.teamGrid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:640px){.teamGrid{grid-template-columns:1fr}}
-
 /* 지역팀은 팀 색상 강조 테두리를 준다 */
 .room.region{border-left:5px solid var(--accent)}
+.room.side-right.region{border-left:2px solid var(--line);border-right:5px solid var(--accent)}
+/* 방 안 책상은 방 기준 절대 위치 */
+.room .desks{position:absolute;inset:0}
+.room .desk{position:absolute}
 .room .kindTag{
   margin-left:auto;font-size:9px;color:var(--ink-2);
   background:var(--room-2);border:1px solid var(--line);border-radius:999px;padding:1px 6px;
@@ -433,25 +487,41 @@ button{font-family:inherit;cursor:pointer}
 
 .room{
   background:var(--room);border:2px solid var(--line);border-radius:10px;
-  padding:9px 10px 11px;position:relative;transition:box-shadow .25s,transform .25s;
+  padding:7px 9px 9px;transition:box-shadow .25s;
 }
-.room.track{box-shadow:0 0 0 3px var(--neon),0 6px 18px rgba(255,143,208,.35);transform:translateY(-2px)}
-.room h3{margin:0 0 2px;font-size:12px;display:flex;align-items:center;gap:6px}
-.room .sub{font-size:10px;color:var(--ink-2);margin-bottom:8px}
+.room.track{box-shadow:0 0 0 3px var(--neon),0 6px 18px rgba(255,143,208,.35)}
+.room h3{margin:0 0 1px;font-size:10px;display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden}
+.room .sub{font-size:8px;color:var(--ink-2);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.room2__label{font-size:10px;white-space:nowrap;overflow:hidden}
 .room .dot{width:8px;height:8px;border-radius:50%;background:var(--slate);box-shadow:0 0 0 2px var(--room)}
 .room.active .dot{background:var(--mint);animation:pulse 1.4s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 
-/* ═══════════ 공용 공간 (미팅룸 · 휴게공간 · 현황판) ═══════════ */
-.commonGrid{
-  display:grid;grid-template-columns:1.9fr 1fr 1.2fr;gap:12px;margin-bottom:16px;align-items:start;
+/* ═══════════ 공용 공간 (미팅룸 · 휴게공간 · 화장실) ═══════════ */
+/* 미팅룸 아래 회의 소집 버튼 */
+.mtButtons{position:absolute;display:flex;gap:4px;z-index:12}
+.mtBtnFloor{
+  flex:1;background:var(--room);border:2px solid var(--line);color:var(--ink);
+  border-radius:6px;padding:5px 4px;font-size:9px;font-family:inherit;
+  cursor:pointer;white-space:nowrap;box-shadow:0 2px 5px rgba(90,70,110,.14);
 }
-@media(max-width:1100px){.commonGrid{grid-template-columns:1fr 1fr}}
-@media(max-width:700px){.commonGrid{grid-template-columns:1fr}}
+.mtBtnFloor:hover{border-color:var(--rose);background:#FDF7FA}
+.mtBtnFloor.end{background:var(--console);border-color:var(--console);color:#fff}
+
+/* 화장실 */
+.restroom{border-color:#B7CBD4;background:linear-gradient(180deg,rgba(143,191,198,.08),transparent 40%),var(--room)}
+.restroom__body{display:flex;gap:6px;align-items:flex-end;padding:4px 2px}
+.stall{
+  flex:1;height:44px;background:#EAF0F3;border:2px solid #B7CBD4;border-radius:4px;
+  display:flex;align-items:center;justify-content:center;
+}
+.stall i{width:12px;height:18px;background:#C9D6DD;border-radius:2px 2px 5px 5px}
+.sink{display:flex;flex-direction:column;gap:3px;width:26px}
+.sink span{height:9px;background:#DDE6EC;border:1px solid #B5C2CC;border-radius:3px 3px 6px 6px}
 
 .room2{
   background:var(--room);border:2px solid var(--line);border-radius:10px;
-  padding:9px 10px 11px;position:relative;
+  padding:7px 9px 9px;overflow:hidden;
 }
 .room2__label{
   display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink);margin-bottom:8px;
@@ -582,7 +652,7 @@ button{font-family:inherit;cursor:pointer}
 }
 
 .glassWall{
-  position:relative;height:76px;
+  position:absolute;
   background:
     linear-gradient(115deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 22%,
                     rgba(255,255,255,.35) 42%, rgba(255,255,255,0) 62%),
@@ -603,8 +673,8 @@ button{font-family:inherit;cursor:pointer}
 }
 
 .reception{
-  position:absolute;left:16px;bottom:10px;
-  display:flex;flex-direction:column-reverse;align-items:center;gap:4px;
+  position:absolute;
+  display:flex;flex-direction:column-reverse;align-items:center;justify-content:flex-end;gap:4px;
 }
 .reception__desk{
   width:56px;height:22px;border-radius:3px;
@@ -624,7 +694,7 @@ button{font-family:inherit;cursor:pointer}
 }
 
 /* 정문 */
-.frontDoor{display:flex;flex-direction:column;align-items:center;width:190px}
+.frontDoor{position:absolute;display:flex;flex-direction:column;align-items:center;z-index:11}
 .doorHeader{
   width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
   background:linear-gradient(180deg,#3B2E47,#2A2035);
@@ -685,36 +755,38 @@ button{font-family:inherit;cursor:pointer}
 /* ═══════════ 자리 = 의자 + 캐릭터 + 책상 (D 국면) ═══════════ */
 .desk{
   background:linear-gradient(180deg,var(--room),var(--room-2));
-  border:2px solid var(--line);border-radius:9px;
-  padding:16px 4px 5px;text-align:center;position:relative;cursor:pointer;
+  border:1px solid var(--line);border-radius:7px;
+  padding:12px 2px 3px;text-align:center;cursor:pointer;
   transition:background .2s,border-color .2s,box-shadow .2s;
   display:flex;flex-direction:column;align-items:center;
+  width:90px;
 }
 .desk:hover{box-shadow:0 3px 10px rgba(90,70,110,.16)}
 
-/* 의자 → 캐릭터 → 책상 순으로 겹쳐 "책상 앞에 앉은" 구도를 만든다 */
-.seat{position:relative;width:112px;height:112px;margin:0 auto}
-.seat__chair{position:absolute;left:50%;top:6px;transform:translateX(-50%);z-index:0}
-.seat__person{position:absolute;left:50%;top:0;transform:translateX(-50%);z-index:1}
-.seat__person .char{width:44px;height:71px}
-.seat__desk{position:absolute;left:50%;bottom:0;transform:translateX(-50%);z-index:2}
+/* 의자 → 캐릭터 → 책상 순으로 겹쳐 "책상 앞에 앉은" 구도를 만든다.
+   도면 타일(18px)에 맞춰 축소했다 — 자리 하나가 5 x 5.4 타일. */
+.seat{position:relative;width:84px;height:66px;margin:0 auto}
+.seat__chair{position:absolute;left:50%;top:2px;transform:translateX(-50%) scale(.62);transform-origin:top center;z-index:0}
+.seat__person{position:absolute;left:50%;top:-4px;transform:translateX(-50%);z-index:1}
+.seat__person .char{width:27px;height:44px}
+.seat__desk{position:absolute;left:50%;bottom:0;transform:translateX(-50%) scale(.74);transform-origin:bottom center;z-index:2}
 .deskSvg{display:block;overflow:visible;filter:drop-shadow(0 2px 3px rgba(0,0,0,.18))}
 .chairSvg{display:block}
 
-/* 자리 명패 */
+/* 자리 명패 — 도면 축소에 맞춰 이름·직급만 한 줄로 */
 .deskPlate{
-  margin-top:3px;display:flex;flex-direction:column;align-items:center;gap:1px;
+  margin-top:1px;display:flex;align-items:center;justify-content:center;gap:3px;
   background:var(--room);border:1px solid var(--line);border-radius:4px;
-  padding:2px 6px 3px;min-width:82px;
+  padding:1px 4px;width:100%;
 }
 .deskPlate--lead{background:#FFFDF6;border-color:var(--exec-gold-2)}
-.deskPlate__nm{font-size:10px;color:var(--ink);line-height:1.2}
+.deskPlate__nm{font-size:9px;color:var(--ink);line-height:1.3;white-space:nowrap}
 .deskPlate__rk{
-  font-size:7px;color:var(--ink-2);background:var(--room-2);
-  border:1px solid var(--line);border-radius:999px;padding:0 5px;line-height:1.5;
+  font-size:6px;color:var(--ink-2);background:var(--room-2);
+  border:1px solid var(--line);border-radius:999px;padding:0 3px;line-height:1.5;
 }
 .deskPlate--lead .deskPlate__rk{background:var(--exec-gold);border-color:var(--exec-gold-2);color:#2B2140}
-.deskPlate__rl{font-size:8px;color:var(--ink-2);line-height:1.3}
+.deskPlate__rl{display:none}   /* 담당 역할은 클릭 시 상세 패널에서 본다 */
 .desk:hover{border-color:var(--rose)}
 .desk.sel{border-color:var(--rose);background:#FDF0F5}
 .desk .led{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--slate)}

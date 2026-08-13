@@ -1,8 +1,10 @@
 import { STAFF, TASKS, AGENDAS, CHATS } from '../data/staff.js';
-import { WORK_HOURS, SIM_WINDOW } from '../data/layout.js';
-import { $, state, paint, log, select, selected, submitAgenda, resolveAgenda, arriveWalk, leaveWalk, chatWith } from './office.js';
+import { WORK_HOURS, SIM_WINDOW, IDLE_ACTIVITIES, IDLE_MAX_CONCURRENT } from '../data/layout.js';
+import { $, state, paint, log, select, selected, submitAgenda, resolveAgenda,
+         arriveWalk, leaveWalk, chatWith, setWalkSpeed, idleWander, idleCount } from './office.js';
 import { runRealAgent } from './agent.js';
 import { submitForReview } from './orchestrator.js';
+import { meeting } from './meeting.js';
 
 const CHAT_BY_SENDER = {};
 CHATS.forEach(c => { (CHAT_BY_SENDER[c.from] ||= []).push(c); });
@@ -13,6 +15,41 @@ let speed = 1;
 let track = true;
 
 export function getSimMin(){ return simMin; }
+
+/* ═══════════ 사내 활동 로그 — 업무 로그와 완전히 분리한다 ═══════════ */
+function idleLog(simMin, msg){
+  const el = $('idleLog');
+  if(!el) return;
+  const d = document.createElement('div');
+  d.innerHTML = `<span class="t">${String(Math.floor(simMin/60)%24).padStart(2,'0')}:${String(simMin%60).padStart(2,'0')}</span>${msg}`;
+  el.prepend(d);
+  while(el.childNodes.length > 40) el.lastChild.remove();
+}
+
+/* ═══════════ 평상시 자동 움직임 ═══════════
+   ★ AI를 호출하지 않는다. 미리 정의된 목록에서 무작위로 고르는 순수 연출이다.
+   ★ 동시에 자리를 비우는 인원은 최대 3명(IDLE_MAX_CONCURRENT). */
+let nextIdleAt = 0;
+function maybeIdleWander(){
+  if(!running) return;
+  if(meeting.active) return;                       // 회의 중에는 돌아다니지 않는다
+  if(simMin < WORK_HOURS.start || simMin >= WORK_HOURS.end) return;
+  if(simMin < nextIdleAt) return;
+  if(idleCount() >= IDLE_MAX_CONCURRENT) return;
+
+  // 지금 자리에서 일하고 있는 사람 중에서만 고른다
+  const pool = STAFF.filter(s => {
+    const st = state[s.n];
+    return !st.away && (st.st === '근무중' || st.st === '처리중');
+  });
+  if(!pool.length) return;
+
+  const s = pool[Math.floor(Math.random() * pool.length)];
+  const act = IDLE_ACTIVITIES[Math.floor(Math.random() * IDLE_ACTIVITIES.length)];
+  nextIdleAt = simMin + 20 + Math.floor(Math.random() * 40);   // 사내 시각 기준 간격
+
+  idleWander(s.n, act, simMin, msg => idleLog(simMin, msg));
+}
 
 let trackTimer = null;
 function focusRoom(tid){
@@ -34,6 +71,7 @@ function tick(){
     const st = state[s.n];
     if(st.bubble && simMin - st.bt > 40) st.bubble = null;
     if(st.st==='보고대기') return;
+    if(st.st==='회의 참석 중') return;      // 회의 중인 사람은 업무를 새로 시작하지 않는다
 
     if(simMin < WORK_HOURS.start) st.st='미출근';
     else if(simMin >= WORK_HOURS.end){
@@ -84,6 +122,7 @@ function tick(){
       }
     }
   });
+  maybeIdleWander();          // 평상시 자동 움직임 (AI 호출 없음)
   paint(simMin);
   if(selected) select(selected, simMin);
 }
@@ -94,6 +133,7 @@ export function initSim(){
   $('speedSeg').onclick = e=>{
     const b=e.target.closest('button'); if(!b) return;
     speed=+b.dataset.sp;
+    setWalkSpeed(speed);      // 배속을 걷는 속도에 반영한다
     [...$('speedSeg').children].forEach(x=>x.classList.toggle('on',x===b));
   };
   $('trackBtn').onclick = e=>{

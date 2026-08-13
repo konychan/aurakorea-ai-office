@@ -67,6 +67,11 @@
   <div class="floor" id="floor"></div>
 
   <div class="side">
+    <div class="card" id="boardPanel">
+      <h4>업무 현황판 <span class="badge sub">STATUS BOARD</span></h4>
+      <div class="board__body" id="boardBody"></div>
+    </div>
+
     <div class="panel">
       <h4>ceo.console — 대표 지시창 <span class="win">● ● ●</span></h4>
       <div class="quick">
@@ -118,17 +123,22 @@
       <h4>업무 로그</h4>
       <div class="log" id="log"></div>
     </div>
+
+    <div class="logbox" id="idleBox">
+      <h4>사내 활동 <span class="badge sub">이동·휴식</span></h4>
+      <div class="log idle" id="idleLog"></div>
+    </div>
   </div>
 </div>
 
 </div>
 
 <script type="module">
-  import { initOffice, $, log } from './src/office.js';
+  import { initOffice, $, log, bindFloorMeetingButtons } from './src/office.js';
   import { initSim, getSimMin } from './src/sim.js';
   import { initConsole } from './src/console.js';
   import { initOrchestrator } from './src/orchestrator.js';
-  import { initMeeting } from './src/meeting.js';
+  import { initMeeting, callMeeting, endMeeting } from './src/meeting.js';
   import { SIM_WINDOW } from './data/layout.js';
 
   function startApp(){
@@ -139,6 +149,12 @@
     initConsole();
     initOrchestrator(getSimMin);
     initMeeting(getSimMin);
+    // 도면 위(미팅룸 옆) 회의 소집 버튼
+    bindFloorMeetingButtons({
+      'call-region': () => callMeeting({ scope:'region', title:'지역팀장 회의' }, getSimMin()),
+      'call-all':    () => callMeeting({ scope:'all',    title:'전체 팀장 회의' }, getSimMin()),
+      'end':         () => endMeeting(getSimMin()),
+    });
     log(SIM_WINDOW.open, '시스템','아우라코리아 AI 오피스 부팅 완료. 하루 시작을 누르세요.');
     setInterval(()=>{
       const now = new Date(Date.now() + (new Date().getTimezoneOffset()*60000) + 9*3600000);

@@ -1,7 +1,22 @@
+/* ═══════════════════════════════════════════════════════════════
+   사무실 도면 — 이 파일 한 곳에서 모든 방·복도·좌표를 관리한다.
+
+   좌표계: TILE 격자. 화면에서는 1 tile = GRID.tile px 로 그려진다.
+   방은 CSS 그리드가 아니라 절대 좌표로 배치되므로, 여기 숫자가 곧 화면 배치다.
+
+   도면 구조
+        상단 중앙 : 대표실 → (보고 대기줄) → 본부장실 → 미팅룸
+        왼쪽 열   : 팀 룸 4개
+        오른쪽 열 : 팀 룸 4개
+        맨 오른쪽 : 휴게공간 · 화장실
+        중앙      : 세로 복도 (각 방으로 가로 통로가 갈라진다)
+        하단 중앙 : 정문
+   ═══════════════════════════════════════════════════════════════ */
+
 /* ===================== 근무시간 (여기 한 곳만 고치면 전체가 바뀐다) ===================== */
 export const WORK_HOURS = {
   start: 11 * 60,   // 전 직원 출근 11:00
-  end:   20 * 60,   // 근무 종료 20:00
+  end:   21 * 60,   // 근무 종료 21:00
 };
 // 대시보드가 열려 있는(사내 시계가 도는) 범위. 출근 전 대기 모습도 보여주기 위해 시작보다 2시간 이르게 연다.
 export const SIM_WINDOW = {
@@ -19,10 +34,7 @@ export const CEO = {
   desk: '#5C4530',
 };
 
-/* ===================== 본부장 (직원 명단과 별도 관리) =====================
-   대표님과 실무팀 사이의 총괄 오케스트레이터.
-   대표님 지시를 받아 담당 팀장에게 전달하고, 팀장이 검증한 결과를 다시 검토해
-   대표님께 직접 보고한다. 직원(STAFF)이 아니므로 data/staff.js 에 넣지 않는다. */
+/* ===================== 본부장 (직원 명단과 별도 관리) ===================== */
 export const HQ_MANAGER = {
   name: '공민규',
   title: '본부장',
@@ -33,35 +45,10 @@ export const HQ_MANAGER = {
   desk: '#4A3A2E',
 };
 
-/* 보고 경로: 팀원 → 팀장 → 본부장 → 대표
-   본부장이 팀에 업무를 줄 때도 팀장을 거친다 (팀장이 한 번 더 확인·지시한다). */
+/* 보고 체계: 팀원 → 팀장 → 본부장 → 대표 (이 방식만 쓴다).
+   화면에 경로를 그리지는 않고, 실제 보고 흐름에만 적용한다. */
 export const REPORTING_CHAIN = ['팀원', '팀장', '본부장', '대표'];
 
-/* ===================== 논리 좌표계 (3단계 캐릭터 이동에서 사용) =====================
-   TILE 단위 격자 위 좌표. 지금 단계에서는 화면 렌더링이 이 좌표를 100% 그대로
-   그리지는 않지만(팀 룸은 반응형 CSS 그리드를 그대로 씀), 방/책상/대기줄/정문/복도의
-   좌표 자체는 여기서 정의하고 각 DOM 요소에 data-col/data-row 로 심어 둔다. */
-export const GRID = { tile: 24, cols: 34, rows: 30 };
-
-export const CEO_ROOM = { col: 9, row: 1, w: 16, h: 7 };
-
-export const CEO_DESK = {
-  col: CEO_ROOM.col + CEO_ROOM.w / 2,
-  row: CEO_ROOM.row + CEO_ROOM.h - 2,
-};
-
-// 대표실 문 앞 보고 대기줄 5칸 (3단계: 직원이 여기 순서대로 줄을 선다)
-export const CEO_QUEUE = Array.from({ length: 5 }, (_, i) => ({
-  slot: i + 1,
-  col: CEO_ROOM.col + CEO_ROOM.w / 2 - 2 + i,
-  row: CEO_ROOM.row + CEO_ROOM.h + 1,
-}));
-
-export const ENTRANCE = { label: '정문', col: Math.round(GRID.cols / 2), row: GRID.rows - 1 };
-
-/* ===================== 공용 공간 (B 국면) ===================== */
-
-// 회사 정보 — 정문 안내판과 로고에 쓴다
 export const COMPANY = {
   name: 'AURAKOREA',
   nameKo: '아우라코리아',
@@ -69,75 +56,133 @@ export const COMPANY = {
   floor: '1F',
 };
 
-// 미팅룸 — 대표 상석 + 본부장 + 각 팀장 지정석 (F 국면 회의에서 이 좌석을 쓴다)
-export const MEETING_ROOM = {
-  id: 'meeting',
-  name: '미팅룸',
-  nameEn: 'MEETING ROOM',
-  col: 2, row: GRID.rows - 9, w: 14, h: 7,
-  door: { col: 9, row: GRID.rows - 9 + 7 },
-  // 좌석 배치: head=상석(대표), 좌우로 본부장과 팀장들이 앉는다
-  seats: {
-    head: { who: 'CEO', label: '대표' },
-    hq:   { who: 'HQ_MANAGER', label: '본부장' },
-    // 팀장석은 팀 수만큼 자동 생성한다 (data/staff.js의 팀장이 앉는다)
-  },
+/* ═══════════ 격자 ═══════════ */
+export const GRID = { tile: 18, cols: 58, rows: 69 };
+
+/* ═══════════ 중앙 복도 ═══════════
+   세로 복도가 도면 한가운데를 위아래로 관통하고, 각 방 앞에서 가로 통로가 갈라진다. */
+export const CORRIDOR = {
+  x: 25,            // 세로 복도 왼쪽 끝 col
+  w: 4,             // 복도 폭 (tile)
+  get cx(){ return this.x + this.w / 2; },   // 복도 중심선 = 27
+  top: 10,          // 복도가 시작되는 row (대표실 아래)
+  bottom: 63,       // 복도가 끝나는 row (정문 앞)
 };
 
-// 커피·간식 휴게 공간
+/* ═══════════ 상단 중앙 — 대표실 · 본부장실 · 미팅룸 ═══════════
+   좌우 팀 룸 사이의 중앙 열에 세로로 쌓는다. 미팅룸은 본부장실 바로 아래에 붙인다. */
+export const CEO_ROOM   = { id:'ceo',     name:'대표실',   nameEn:'EXECUTIVE OFFICE', col:20, row:1,  w:14, h:9 };
+export const HQ_ROOM    = { id:'hq',      name:'본부장실', nameEn:'HQ OFFICE',        col:20, row:14, w:14, h:7 };
+export const MEETING_ROOM = {
+  id:'meeting', name:'미팅룸', nameEn:'MEETING ROOM',
+  col:20, row:21, w:14, h:11,          // ← 본부장실(끝 row 21) 바로 아래에 붙는다
+  seats: { head:{ who:'CEO', label:'대표' }, hq:{ who:'HQ_MANAGER', label:'본부장' } },
+};
+
+/* 대표실 문 앞 보고 대기줄 — 세로로 줄을 선다 (대표실 아래 ~ 본부장실 위 구간) */
+export const CEO_QUEUE = Array.from({ length: 5 }, (_, i) => ({
+  slot: i + 1,
+  col: CORRIDOR.cx,
+  row: CEO_ROOM.row + CEO_ROOM.h + 0.7 + i * 0.65,
+}));
+
+/* ═══════════ 좌우 팀 룸 ═══════════
+   왼쪽 4개 / 오른쪽 4개. 팀이 늘어나면 아래 행에 자동으로 이어 붙는다. */
+const TEAM_ROOM = { w:11, h:14, gapY:1, startRow:4 };
+export const TEAM_SIDE = {
+  left:  { col: 8 },        // 복도 왼쪽 (중앙 방들과 겹치지 않는 위치)
+  right: { col: 35 },       // 복도 오른쪽
+};
+
+/* 팀 id 배열을 받아 좌우로 번갈아 배치한다.
+   door = 그 방에서 복도로 나오는 지점 (캐릭터는 반드시 이 문을 거친다) */
+export function layoutTeamRooms(teamIds){
+  const pos = {};
+  teamIds.forEach((id, i) => {
+    const side = i % 2 === 0 ? 'left' : 'right';
+    const rowIdx = Math.floor(i / 2);
+    const col = TEAM_SIDE[side].col;
+    const row = TEAM_ROOM.startRow + rowIdx * (TEAM_ROOM.h + TEAM_ROOM.gapY);
+    pos[id] = {
+      side, col, row, w: TEAM_ROOM.w, h: TEAM_ROOM.h,
+      // 문은 복도를 향한 쪽 벽면 중앙에 낸다
+      door: {
+        col: side === 'left' ? col + TEAM_ROOM.w : col,
+        row: row + TEAM_ROOM.h / 2,
+      },
+    };
+  });
+  return pos;
+}
+
+/* ═══════════ 맨 오른쪽 — 휴게공간 · 화장실 ═══════════ */
+const FAR_RIGHT_COL = TEAM_SIDE.right.col + TEAM_ROOM.w + 2;   // = 48
+
 export const LOUNGE = {
-  id: 'lounge',
-  name: '휴게 공간',
-  nameEn: 'LOUNGE',
-  col: 18, row: GRID.rows - 9, w: 10, h: 7,
-  door: { col: 23, row: GRID.rows - 9 + 7 },
-  // 배치 집기 (렌더링에서 이 목록을 그대로 그린다)
+  id:'lounge', name:'휴게 공간', nameEn:'LOUNGE',
+  col: FAR_RIGHT_COL, row: 4, w: 9, h: 12,
+  door: { col: FAR_RIGHT_COL, row: 10 },
   fixtures: ['커피머신', '정수기', '냉장고', '간식 진열대', '휴게 테이블', '쓰레기통'],
 };
 
-// 안내 데스크 (정문 안쪽)
-export const RECEPTION = {
-  col: ENTRANCE.col - 6, row: GRID.rows - 3, w: 5, h: 2,
+export const RESTROOM = {
+  id:'restroom', name:'화장실', nameEn:'RESTROOM',
+  col: FAR_RIGHT_COL, row: 18, w: 9, h: 9,
+  door: { col: FAR_RIGHT_COL, row: 22 },
 };
 
-// 정문 좌우 유리벽 구간
-export const GLASS_WALL = {
-  left:  { fromCol: 0, toCol: ENTRANCE.col - 3, row: GRID.rows - 1 },
-  right: { fromCol: ENTRANCE.col + 3, toCol: GRID.cols, row: GRID.rows - 1 },
+/* ═══════════ 정문 · 안내 ═══════════ */
+export const ENTRANCE = {
+  label:'정문',
+  col: CORRIDOR.cx, row: GRID.rows - 3,
+  w: 9, h: 3,
 };
+export const RECEPTION = { col: CORRIDOR.cx - 16, row: GRID.rows - 6, w: 8, h: 3 };
 
-// 정문 → 복도 → 대표실 대기줄 을 잇는 경로 웨이포인트 (3단계 이동 경로용)
-export const CORRIDOR = [
-  { col: ENTRANCE.col, row: ENTRANCE.row },
-  { col: ENTRANCE.col, row: CEO_ROOM.row + CEO_ROOM.h + 3 },
-  { col: CEO_ROOM.col + CEO_ROOM.w / 2, row: CEO_ROOM.row + CEO_ROOM.h + 3 },
-  { col: CEO_ROOM.col + CEO_ROOM.w / 2, row: CEO_ROOM.row + CEO_ROOM.h + 1 },
-];
+/* ═══════════ 복도 웨이포인트 ═══════════
+   길찾기 알고리즘을 쓰지 않는다. 아래 규칙으로 경로를 만든다:
+     ① 출발 지점 → 그 방의 문
+     ② 문 → 복도 중심선(같은 높이)
+     ③ 복도를 따라 세로 이동
+     ④ 목적지 방 문 높이에서 복도를 벗어남 → 문 → 목적지
+   벽이나 방을 통과하지 않는다. */
+export function buildPath(from, to){
+  const cx = CORRIDOR.cx;
+  const pts = [];
+  const push = p => {
+    const last = pts[pts.length - 1];
+    if(!last || Math.abs(last.col - p.col) > 0.01 || Math.abs(last.row - p.row) > 0.01) pts.push(p);
+  };
 
-// 팀 수가 늘어나도 자동으로 3열 격자로 정리되는 팀 룸 좌표 생성기
-export function layoutTeamRooms(teamIds) {
-  const cols = 3;
-  const w = 10, h = 9, gap = 1;
-  const startRow = CEO_ROOM.row + CEO_ROOM.h + 5;
-  const startCol = Math.round((GRID.cols - (w * cols + gap * (cols - 1))) / 2);
-  const positions = {};
-  teamIds.forEach((id, i) => {
-    const c = i % cols, r = Math.floor(i / cols);
-    positions[id] = {
-      col: startCol + c * (w + gap),
-      row: startRow + r * (h + gap),
-      w, h,
-      door: { col: startCol + c * (w + gap) + Math.round(w / 2), row: startRow + r * (h + gap) + h },
-    };
-  });
-  return positions;
+  push({ col: from.col, row: from.row });
+  if(from.door) push({ col: from.door.col, row: from.door.row });      // ① 방 문까지
+  const enterRow = from.door ? from.door.row : from.row;
+  push({ col: cx, row: enterRow });                                     // ② 복도 진입
+  const exitRow = to.door ? to.door.row : to.row;
+  push({ col: cx, row: exitRow });                                      // ③ 복도 세로 이동
+  if(to.door) push({ col: to.door.col, row: to.door.row });             // ④ 목적지 문
+  push({ col: to.col, row: to.row });
+  return pts;
 }
 
-// 방 안에서 직원 수만큼 책상이 놓일 상대 좌표 (방 원점 기준 offset, 2열 정렬)
-export function deskSlots(count) {
-  const originCol = 1, originRow = 2, dw = 4, dh = 3, gap = 1, columns = 2;
+/* 방 안에서 직원 수만큼 책상이 놓일 상대 좌표 (방 원점 기준, 2열 정렬)
+   방 크기(w:11, h:14)에 맞춰 자리 하나가 5 x 5.4 타일을 차지한다. */
+export function deskSlots(count){
+  const originCol = 0.6, originRow = 2.6, dw = 5, dh = 5.4, gap = 0.3, columns = 2;
   return Array.from({ length: count }, (_, i) => ({
     col: originCol + (i % columns) * (dw + gap),
     row: originRow + Math.floor(i / columns) * (dh + gap),
   }));
 }
+
+/* ═══════════ 평상시 자동 움직임 (F 이후 · 비용 0) ═══════════
+   AI를 호출하지 않는다. 아래 목록에서 무작위로 골라 쓰는 순수 화면 연출이다. */
+export const IDLE_ACTIVITIES = [
+  { id:'coffee',   to:'lounge',   label:'커피 마시러',   say:'커피 한 잔',     stayMs:2600 },
+  { id:'water',    to:'lounge',   label:'물 뜨러',       say:'물 좀',          stayMs:2000 },
+  { id:'snack',    to:'lounge',   label:'간식 가지러',   say:'간식 좀',        stayMs:2200 },
+  { id:'restroom', to:'restroom', label:'화장실',        say:'잠시 다녀오겠습니다', stayMs:2000 },
+  { id:'visit',    to:'team',     label:'다른 팀 방문',  say:'잠깐 여쭤볼 게', stayMs:2400 },
+  { id:'stroll',   to:'corridor', label:'복도 이동',     say:'',               stayMs:1200 },
+];
+export const IDLE_MAX_CONCURRENT = 3;   // 동시에 자리를 비울 수 있는 최대 인원

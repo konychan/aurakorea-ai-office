@@ -1,7 +1,9 @@
 import { TEAMS } from '../data/teams.js';
 import { STAFF, RANKS, LEADER_OF } from '../data/staff.js';
-import { CEO, HQ_MANAGER, CEO_ROOM, CEO_QUEUE, ENTRANCE, WORK_HOURS, SIM_WINDOW,
-         COMPANY, MEETING_ROOM, LOUNGE } from '../data/layout.js';
+import { CEO, HQ_MANAGER, CEO_ROOM, HQ_ROOM, CEO_QUEUE, ENTRANCE, WORK_HOURS, SIM_WINDOW,
+         COMPANY, MEETING_ROOM, LOUNGE, RESTROOM, RECEPTION,
+         GRID, CORRIDOR, layoutTeamRooms, deskSlots, buildPath,
+         IDLE_ACTIVITIES, IDLE_MAX_CONCURRENT } from '../data/layout.js';
 import { character, vipCharacter } from './character.js';
 import { workDesk, nameplate, officeChair, MONITOR_STATE } from './furniture.js';
 
@@ -21,45 +23,96 @@ export function escapeHtml(str){
 
 export let selected = null;
 
-/* ===================== 캐릭터 이동 (출근·퇴근·대표실 앞 줄서기) ===================== */
-function relPos(el){
-  const floorRect = $('floor').getBoundingClientRect();
-  const r = el.getBoundingClientRect();
-  return { x: r.left - floorRect.left + r.width/2, y: r.top - floorRect.top + r.height/2 };
-}
+/* ═══════════════════════════════════════════════════════════════
+   캐릭터 이동 — 타일 좌표 + 복도 경로 + transform
+
+   · 위치는 전부 타일 좌표(col,row)로 다루고, 화면에 그릴 때만 px로 바꾼다.
+   · 이동은 data/layout.js 의 buildPath() 가 만든 복도 웨이포인트만 따라간다.
+     (방·벽을 통과하지 않는다. 길찾기 알고리즘은 쓰지 않는다.)
+   · 애니메이션은 transform(translate3d)만 쓴다 — left/top 금지.
+   ═══════════════════════════════════════════════════════════════ */
+const T = GRID.tile;
+export const toPx = p => ({ x: p.col * T, y: p.row * T });
+
+// 접근성: 모션 최소화 설정이면 애니메이션 없이 즉시 이동한다
+const reduceMotion = () =>
+  window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// 배속을 이동 속도에 반영한다 (sim.js 가 갱신한다)
+let walkSpeed = 1;
+export function setWalkSpeed(v){ walkSpeed = Math.max(1, v || 1); }
+
+/* 직원의 자리 좌표 — 방 좌표 + 방 안 책상 슬롯 */
+const deskPos = {};    // 이름 → {col,row,door}
+export function deskPosOf(name){ return deskPos[name]; }
 
 function spawnWalker(s){
   const w = document.createElement('div');
   w.className = 'walker';
-  w.innerHTML = character(s, { pose:'walk' });   // 걷는 전신 캐릭터
+  w.innerHTML = character(s, { pose:'walk' });
   $('walkers').appendChild(w);
   return w;
 }
 
-/* 경로를 따라 걷는다. 구간마다 진행 방향을 보고 캐릭터를 좌우로 뒤집어
-   실제로 가는 쪽을 바라보게 한다 (헌장 11항: 몸 돌리기). */
-function walkPath(w, points, msPerLeg=550){
-  return new Promise(resolve=>{
-    // 각 구간이 시작될 때 방향을 갱신한다
-    const faceFor = i => {
-      const dx = points[i+1].x - points[i].x;
-      if(Math.abs(dx) < 2) return;              // 세로 이동은 방향 유지
-      w.classList.toggle('flip', dx < 0);        // 왼쪽으로 가면 반전
-    };
-    faceFor(0);
-    for(let i=1;i<points.length-1;i++){
-      setTimeout(()=>faceFor(i), msPerLeg*i);
+function placeAt(el, p){
+  el.style.transform = `translate3d(${p.col * T}px, ${p.row * T}px, 0)`;
+}
+
+/* 웨이포인트를 순서대로 걸어간다.
+   구간 길이에 비례해 시간을 배분하므로 걷는 속도가 일정하게 보인다. */
+function walkAlong(w, points, pxPerSec = 120){
+  return new Promise(resolve => {
+    if(points.length < 2){ placeAt(w, points[0] || {col:0,row:0}); return resolve(); }
+
+    // 모션 최소화면 마지막 지점으로 즉시 이동
+    if(reduceMotion()){
+      placeAt(w, points[points.length - 1]);
+      return resolve();
     }
-    const anim = w.animate(
-      points.map(p=>({ left:p.x+'px', top:p.y+'px' })),
-      { duration: msPerLeg*(points.length-1), easing:'ease-in-out', fill:'forwards' }
-    );
+
+    const px = points.map(p => ({ x: p.col * T, y: p.row * T }));
+    const segLen = [];
+    let total = 0;
+    for(let i = 0; i < px.length - 1; i++){
+      const d = Math.hypot(px[i+1].x - px[i].x, px[i+1].y - px[i].y);
+      segLen.push(d); total += d;
+    }
+    if(total < 1){ placeAt(w, points[points.length - 1]); return resolve(); }
+
+    const duration = Math.max(280, (total / (pxPerSec * walkSpeed)) * 1000);
+    // 구간 경계를 offset 으로 지정해 등속으로 걷게 한다
+    let acc = 0;
+    const frames = px.map((p, i) => {
+      if(i > 0) acc += segLen[i-1];
+      return { transform:`translate3d(${p.x}px, ${p.y}px, 0)`, offset: total ? acc/total : 1 };
+    });
+
+    // 진행 방향에 따라 몸을 돌린다
+    const faceAt = i => {
+      const dx = px[i+1].x - px[i].x;
+      if(Math.abs(dx) > 2) w.classList.toggle('flip', dx < 0);
+    };
+    faceAt(0);
+    let t = 0;
+    for(let i = 1; i < px.length - 1; i++){
+      t += (segLen[i-1] / total) * duration;
+      setTimeout(() => faceAt(i), t);
+    }
+
+    const anim = w.animate(frames, { duration, easing:'linear', fill:'forwards' });
     anim.onfinish = resolve;
     anim.oncancel = resolve;
   });
 }
 
-// 대표실 앞 보고 대기줄 5칸 점유 현황
+/* 어떤 지점에서 어떤 지점으로 — 복도를 거쳐 걷는다 */
+function walkBetween(w, from, to, pxPerSec){
+  return walkAlong(w, buildPath(from, to), pxPerSec);
+}
+
+/* ═══════════ 대표실 앞 보고 대기줄 ═══════════
+   바닥에 발자국 표시가 그려져 있고, 대기자는 순서대로 세로로 줄을 선다.
+   머리 위에 순번이 표시된다. */
 const queueOccupancy = new Array(CEO_QUEUE.length).fill(null);
 function claimSlot(name){
   const i = queueOccupancy.findIndex(v=>v===null);
@@ -71,19 +124,26 @@ function releaseSlot(name){
   if(i>=0) queueOccupancy[i] = null;
   return i;
 }
-function slotEl(i){ return document.querySelector(`.qslot[data-slot="${i+1}"]`); }
-function occupySlotView(i, s){
-  const el = slotEl(i); if(!el) return;
-  // 줄 서서 대기하는 모습 — 서 있되 걷지는 않는다 (char--idle)
-  el.innerHTML = character(s, { pose:'walk', className:'char--idle' });
-  el.classList.add('occ');
-  el.title = `${s.n} · 보고 대기`;
+function slotMark(i){ return document.querySelector(`.qmark[data-slot="${i+1}"]`); }
+
+/* 대기줄에 선 사람은 대기줄 레이어에 캐릭터로 남는다 (walker 가 아니라 고정 표시) */
+function standInQueue(i, s){
+  const layer = $('queueLayer');
+  if(!layer) return;
+  const el = document.createElement('div');
+  el.className = 'queuer';
+  el.dataset.n = s.n;
+  el.innerHTML = `<span class="queuer__no">${i+1}</span>${character(s, { pose:'walk', className:'char--idle' })}`;
+  placeAt(el, CEO_QUEUE[i]);
+  layer.appendChild(el);
+  const mk = slotMark(i);
+  if(mk) mk.classList.add('occ');
 }
-function freeSlotView(i){
-  const el = slotEl(i); if(!el) return;
-  el.textContent = String(i+1);
-  el.classList.remove('occ');
-  el.removeAttribute('title');
+function leaveQueue(name, i){
+  const el = document.querySelector(`.queuer[data-n="${name}"]`);
+  if(el) el.remove();
+  const mk = slotMark(i);
+  if(mk) mk.classList.remove('occ');
 }
 
 /* 정문 개폐 — 캐릭터가 드나드는 동안만 열린다.
@@ -117,92 +177,83 @@ export function leaveWalk(name, simMin){ return withWalkLock(name, ()=>_leaveWal
 export function goReport(name, simMin){ return withWalkLock(name, ()=>_goReport(name, simMin)); }
 export function returnFromReport(name, simMin){ return withWalkLock(name, ()=>_returnFromReport(name, simMin)); }
 
-/* 여러 명이 동시에 이동할 때 서로 겹치지 않게 하는 장치 (헌장 11항)
-   - 출근 순서를 조금씩 어긋나게 한다
-   - 통로에서 각자 다른 레인을 쓴다 */
+/* 여러 명이 동시에 움직일 때 정문 앞에서 뭉치지 않도록 출입 순서를 어긋나게 한다 */
 const staffIndex = name => STAFF.findIndex(x => x.n === name);
-const laneOffset = name => ((staffIndex(name) % 5) - 2) * 16;
+
+// 정문 밖(도면 아래) — 출근 전·퇴근 후 캐릭터가 머무는 곳
+const OUTSIDE = { col: ENTRANCE.col, row: GRID.rows + 1 };
+const DOORWAY = { col: ENTRANCE.col, row: ENTRANCE.row - 0.5 };
 
 async function _arriveWalk(name, simMin){
   const s = STAFF.find(x=>x.n===name);
-  const deskEl = document.querySelector(`.desk[data-n="${name}"]`);
-  const entranceEl = $('entrance');
-  if(!deskEl || !entranceEl) return;
+  const desk = deskPos[name];
+  if(!s || !desk) return;
   state[name].away = true;
   paint(simMin);
-  // 한 명씩 차례로 들어온다 — 문 앞에서 뭉치지 않는다
-  await new Promise(r=>setTimeout(r, staffIndex(name) * 220));
-  // 정문을 열고 들어온다 — 캐릭터가 갑자기 생기지 않는다
+
+  await new Promise(r=>setTimeout(r, staffIndex(name) * 200));
   openFrontDoor();
-  await new Promise(r=>setTimeout(r, 320));
+  await new Promise(r=>setTimeout(r, 300));
+
   const w = spawnWalker(s);
-  const from = relPos(entranceEl), to = relPos(deskEl);
-  const lane = laneOffset(name);
-  // 정문 → 통로(세로, 개인별 레인) → 자기 자리(가로) 순으로 걷는다
-  await walkPath(w, [from, {x:from.x+lane,y:to.y}, to]);
+  placeAt(w, OUTSIDE);
+  // 정문 밖 → 문 안쪽 → 복도 → 자기 방 문 → 자리
+  await walkAlong(w, [OUTSIDE, DOORWAY]);
   closeFrontDoor();
+  await walkBetween(w, DOORWAY, desk);
   w.remove();
+
   state[name].away = false;
   paint(simMin);
 }
 
 async function _leaveWalk(name, simMin){
   const s = STAFF.find(x=>x.n===name);
-  const deskEl = document.querySelector(`.desk[data-n="${name}"]`);
-  const entranceEl = $('entrance');
-  if(!deskEl || !entranceEl) return;
+  const desk = deskPos[name];
+  if(!s || !desk) return;
   state[name].away = true;
   paint(simMin);
-  // 퇴근도 한 명씩 차례로 — 정문 앞에서 뭉치지 않는다
-  await new Promise(r=>setTimeout(r, staffIndex(name) * 200));
+
+  await new Promise(r=>setTimeout(r, staffIndex(name) * 180));
   const w = spawnWalker(s);
-  const from = relPos(deskEl), to = relPos(entranceEl);
-  const lane = laneOffset(name);
-  // 자리 → 통로(개인별 레인) → 정문. 문 앞에 도착할 즈음 문이 열린다
-  const walk = walkPath(w, [from, {x:from.x+lane,y:to.y}, {x:to.x+lane,y:to.y}, to]);
-  setTimeout(openFrontDoor, 900);
-  await walk;
-  w.remove();
+  placeAt(w, desk);
+  // 자리 → 방 문 → 복도 → 정문
+  await walkBetween(w, desk, DOORWAY);
+  openFrontDoor();
+  await walkAlong(w, [DOORWAY, OUTSIDE]);
   closeFrontDoor();
+  w.remove();
   state[name].away = false;
 }
 
 async function _goReport(name, simMin){
   const s = STAFF.find(x=>x.n===name);
-  const deskEl = document.querySelector(`.desk[data-n="${name}"]`);
-  if(!deskEl) return;
+  const desk = deskPos[name];
+  if(!s || !desk) return;
   state[name].away = true;
   paint(simMin);
-  const w = spawnWalker(s);
-  const from = relPos(deskEl);
-  const corridorY = relPos($('corridor')).y;
+
   const i = claimSlot(name);
-  if(i>=0){
-    const to = relPos(slotEl(i));
-    await walkPath(w, [from, {x:from.x,y:corridorY}, {x:to.x,y:corridorY}, to]);
-    w.remove();
-    occupySlotView(i, s);
-  } else {
-    await walkPath(w, [from, {x:from.x,y:corridorY}]);
-    w.remove();
-  }
+  const w = spawnWalker(s);
+  placeAt(w, desk);
+  // 자리 → 방 문 → 복도 → 대표실 앞 대기줄
+  const target = i >= 0 ? CEO_QUEUE[i] : { col: CORRIDOR.cx, row: CEO_ROOM.row + CEO_ROOM.h + 2 };
+  await walkBetween(w, desk, target);
+  w.remove();
+  if(i >= 0) standInQueue(i, s);
 }
 
 async function _returnFromReport(name, simMin){
   const s = STAFF.find(x=>x.n===name);
-  const deskEl = document.querySelector(`.desk[data-n="${name}"]`);
-  if(!deskEl) return;
+  const desk = deskPos[name];
+  if(!s || !desk) return;
   const i = releaseSlot(name);
-  const corridorY = relPos($('corridor')).y;
+  const from = i >= 0 ? CEO_QUEUE[i] : { col: CORRIDOR.cx, row: CEO_ROOM.row + CEO_ROOM.h + 2 };
+  if(i >= 0) leaveQueue(name, i);
+
   const w = spawnWalker(s);
-  const to = relPos(deskEl);
-  if(i>=0){
-    const from = relPos(slotEl(i));
-    freeSlotView(i);
-    await walkPath(w, [from, {x:from.x,y:corridorY}, {x:to.x,y:corridorY}, to]);
-  } else {
-    await walkPath(w, [{x:to.x,y:corridorY}, to]);
-  }
+  placeAt(w, from);
+  await walkBetween(w, from, desk);
   w.remove();
   state[name].away = false;
   paint(simMin);
@@ -227,22 +278,26 @@ function leaveSeat(name){
   el.classList.remove('seated', 'speaking');
 }
 
+/* 미팅룸 좌석의 타일 좌표 — 회의 테이블 주위에 둘러앉는다 */
+const meetingSeatPos = {};   // 이름 → {col,row}
+export function registerMeetingSeat(name, pos){ meetingSeatPos[name] = pos; }
+const MEETING_DOOR = { col: MEETING_ROOM.col + MEETING_ROOM.w / 2, row: MEETING_ROOM.row + MEETING_ROOM.h };
+
 /* 직원(팀장)이 미팅룸으로 이동해 착석한다 */
 export async function walkToMeeting(name, simMin){
   const s = STAFF.find(x=>x.n===name);
-  const deskEl = document.querySelector(`.desk[data-n="${name}"]`);
-  const seat = seatEl(name);
-  if(!s || !deskEl || !seat) return;
+  const desk = deskPos[name];
+  const seatP = meetingSeatPos[name];
+  if(!s || !desk || !seatP) return;
 
   return withWalkLock(name, async () => {
     state[name].away = true;
     state[name].bubble = '회의 참석';
     paint(simMin);
     const w = spawnWalker(s);
-    const from = relPos(deskEl), to = relPos(seat);
-    const corridorY = relPos($('corridor2') || $('corridor')).y;
-    // 자리 → 통로 → 미팅룸 유리문 → 지정 좌석
-    await walkPath(w, [from, {x:from.x,y:corridorY}, {x:to.x,y:corridorY}, to]);
+    placeAt(w, desk);
+    // 자리 → 방 문 → 복도 → 미팅룸 문 → 지정 좌석
+    await walkBetween(w, desk, { ...seatP, door: MEETING_DOOR });
     w.remove();
     sitAtSeat(name, character(s, { pose:'sit', className:'char--mini' }));
     paint(simMin);
@@ -252,17 +307,15 @@ export async function walkToMeeting(name, simMin){
 /* 회의가 끝나면 자기 자리로 걸어서 복귀한다 */
 export async function walkFromMeeting(name, simMin){
   const s = STAFF.find(x=>x.n===name);
-  const deskEl = document.querySelector(`.desk[data-n="${name}"]`);
-  const seat = seatEl(name);
-  if(!s || !deskEl || !seat) return;
+  const desk = deskPos[name];
+  const seatP = meetingSeatPos[name];
+  if(!s || !desk || !seatP) return;
 
   return withWalkLock(name, async () => {
-    const from = relPos(seat);
     leaveSeat(name);
     const w = spawnWalker(s);
-    const to = relPos(deskEl);
-    const corridorY = relPos($('corridor2') || $('corridor')).y;
-    await walkPath(w, [from, {x:from.x,y:corridorY}, {x:to.x,y:corridorY}, to]);
+    placeAt(w, seatP);
+    await walkBetween(w, { ...seatP, door: MEETING_DOOR }, desk);
     w.remove();
     state[name].away = false;
     state[name].bubble = null;
@@ -270,45 +323,52 @@ export async function walkFromMeeting(name, simMin){
   });
 }
 
-/* 대표·본부장은 직원이 아니므로 별도로 이동시킨다 */
-export async function walkVipToMeeting(who, vipDef){
-  const seat = seatEl(vipDef.name);
-  const roomEl = who === 'ceo' ? document.querySelector('.ceoRoom') : $('hqRoom');
-  if(!seat || !roomEl) return;
+/* 대표·본부장은 직원이 아니므로 별도로 이동시킨다.
+   대표는 회의 때만 대표실을 나선다 (평소에는 움직이지 않는다). */
+const vipHome = {
+  ceo: { col: CEO_ROOM.col + CEO_ROOM.w/2, row: CEO_ROOM.row + CEO_ROOM.h - 2,
+         door: { col: CEO_ROOM.col + CEO_ROOM.w/2, row: CEO_ROOM.row + CEO_ROOM.h } },
+  hq:  { col: HQ_ROOM.col + HQ_ROOM.w/2,  row: HQ_ROOM.row + HQ_ROOM.h - 2,
+         door: { col: HQ_ROOM.col + HQ_ROOM.w/2,  row: HQ_ROOM.row + HQ_ROOM.h } },
+};
+export function vipHomeOf(who){ return vipHome[who]; }
 
-  if(who === 'ceo') document.querySelector('.ceoRoom').classList.add('vacant');
-  else setHqPresent(false);
-
+function spawnVipWalker(vipDef){
   const w = document.createElement('div');
   w.className = 'walker walker--hq';
   w.innerHTML = vipCharacter(vipDef, 'walk');
   $('walkers').appendChild(w);
+  return w;
+}
+function setVipPresent(who, present){
+  if(who === 'ceo'){
+    const el = document.querySelector('.ceoRoom');
+    if(el) el.classList.toggle('vacant', !present);
+  } else setHqPresent(present);
+}
 
-  const from = relPos(roomEl), to = relPos(seat);
-  const corridorY = relPos($('corridor2') || $('corridor')).y;
-  await walkPath(w, [from, {x:from.x,y:corridorY}, {x:to.x,y:corridorY}, to]);
+export async function walkVipToMeeting(who, vipDef){
+  const seatP = meetingSeatPos[vipDef.name];
+  const home = vipHome[who];
+  if(!seatP || !home) return;
+  setVipPresent(who, false);
+  const w = spawnVipWalker(vipDef);
+  placeAt(w, home);
+  await walkBetween(w, home, { ...seatP, door: MEETING_DOOR });
   w.remove();
   sitAtSeat(vipDef.name, vipCharacter(vipDef).replace('class="char', 'class="char char--mini'));
 }
 
 export async function walkVipFromMeeting(who, vipDef){
-  const seat = seatEl(vipDef.name);
-  const roomEl = who === 'ceo' ? document.querySelector('.ceoRoom') : $('hqRoom');
-  if(!seat || !roomEl) return;
-
-  const from = relPos(seat);
+  const seatP = meetingSeatPos[vipDef.name];
+  const home = vipHome[who];
+  if(!seatP || !home) return;
   leaveSeat(vipDef.name);
-  const w = document.createElement('div');
-  w.className = 'walker walker--hq';
-  w.innerHTML = vipCharacter(vipDef, 'walk');
-  $('walkers').appendChild(w);
-
-  const to = relPos(roomEl);
-  const corridorY = relPos($('corridor2') || $('corridor')).y;
-  await walkPath(w, [from, {x:from.x,y:corridorY}, {x:to.x,y:corridorY}, to]);
+  const w = spawnVipWalker(vipDef);
+  placeAt(w, seatP);
+  await walkBetween(w, { ...seatP, door: MEETING_DOOR }, home);
   w.remove();
-  if(who === 'ceo') document.querySelector('.ceoRoom').classList.remove('vacant');
-  else setHqPresent(true);
+  setVipPresent(who, true);
 }
 
 /* 발언자 표시 — 한 번에 한 사람만 발언한다 (헌장 16항) */
@@ -361,23 +421,23 @@ function setHqPresent(present){
 }
 
 /* 본부장이 대상 자리로 걸어가 지시를 전달하고 돌아온다.
+   본부장이 움직이는 상황: 대표 지시 / 팀 업무 점검 / 업무 하달 / 회의 소집
    onArrive: 도착했을 때 실행할 동작 (지시 전달 연출 등) */
 export async function hqVisit(targetName, { onArrive, stayMs = 1400 } = {}){
   const targetEl = document.querySelector(`.desk[data-n="${targetName}"]`);
-  const hqEl = $('hqRoom');
-  if(!targetEl || !hqEl || hqState.busy) return false;
+  const target = deskPos[targetName];
+  const home = vipHome.hq;
+  if(!targetEl || !target || hqState.busy) return false;
 
   hqState.busy = true;
   hqState.at = '이동 중';
   setHqPresent(false);
 
   const w = spawnHqWalker();
-  const from = relPos(hqEl);
-  const to = relPos(targetEl);
-  const corridorY = relPos($('corridor')).y;
-
-  // 본부장실 → 복도 → 담당자 자리 앞
-  await walkPath(w, [from, {x:from.x,y:corridorY}, {x:to.x,y:corridorY}, {x:to.x, y:to.y - 6}]);
+  placeAt(w, home);
+  // 본부장실 → 복도 → 담당자 방 문 → 자리 앞 (복도로만 이동한다)
+  const standBy = { col: target.col, row: target.row + 1, door: target.door };
+  await walkBetween(w, home, standBy);
 
   // 담당자가 하던 일을 멈추고 본부장을 바라본다
   targetEl.classList.add('attending');
@@ -387,7 +447,7 @@ export async function hqVisit(targetName, { onArrive, stayMs = 1400 } = {}){
   targetEl.classList.remove('attending');
 
   // 본부장실로 복귀
-  await walkPath(w, [{x:to.x, y:to.y - 6}, {x:to.x,y:corridorY}, {x:from.x,y:corridorY}, from]);
+  await walkBetween(w, standBy, home);
   w.remove();
   hqState.busy = false;
   hqState.at = '본부장실';
@@ -422,16 +482,16 @@ export function chatWith(fromName, toName, ask, reply, simMin){
 
 async function _chatWith(fromName, toName, ask, reply, simMin){
   const sFrom = STAFF.find(x=>x.n===fromName);
-  const fromDesk = document.querySelector(`.desk[data-n="${fromName}"]`);
-  const toDesk = document.querySelector(`.desk[data-n="${toName}"]`);
-  if(!fromDesk || !toDesk) return;
+  const from = deskPos[fromName], toDesk = deskPos[toName];
+  if(!sFrom || !from || !toDesk) return;
 
   state[fromName].away = true;
   paint(simMin);
   const w = spawnWalker(sFrom);
-  const fromPos = relPos(fromDesk), deskPos = relPos(toDesk);
-  const toPos = { x: deskPos.x - 24, y: deskPos.y }; // 말풍선이 겹치지 않도록 상대 옆에 선다
-  await walkPath(w, [fromPos, {x:toPos.x,y:fromPos.y}, toPos]);
+  placeAt(w, from);
+  // 상대 자리 옆에 선다 (말풍선이 겹치지 않게 살짝 옆으로)
+  const standBy = { col: toDesk.col - 1.2, row: toDesk.row + 0.6, door: toDesk.door };
+  await walkBetween(w, from, standBy);
   log(simMin, fromName, `${toName} 자리로 가서 물었습니다: "${ask}"`);
 
   const askBubble = document.createElement('div');
@@ -446,7 +506,7 @@ async function _chatWith(fromName, toName, ask, reply, simMin){
   log(simMin, toName, `${fromName}에게 답했습니다: "${reply}"`);
   askBubble.remove();
 
-  await walkPath(w, [toPos, {x:fromPos.x,y:toPos.y}, fromPos]);
+  await walkBetween(w, standBy, from);
   w.remove();
   state[fromName].away = false;
   paint(simMin);
@@ -587,7 +647,8 @@ function meetingRoomHTML(){
        <span class="mseat__role">${role}</span>
      </div>`;
 
-  return `<div class="room2 meetingRoom" id="meetingRoom">
+  return `<div class="room2 meetingRoom room--fixed" id="meetingRoom" style="${box(MEETING_ROOM)}"
+               data-col="${MEETING_ROOM.col}" data-row="${MEETING_ROOM.row}">
     <div class="room2__label">
       <svg class="ico" viewBox="0 0 24 24"><path d="M3 5h18v12H3z" fill="none" stroke="#6BE3E0" stroke-width="2"/><path d="M8 19h8" stroke="#6BE3E0" stroke-width="2"/></svg>
       ${MEETING_ROOM.name} <span class="en">${MEETING_ROOM.nameEn}</span>
@@ -611,13 +672,22 @@ function meetingRoomHTML(){
       </div>
       <div class="whiteboard"><span>화이트보드</span></div>
     </div>
-    <div class="glassDoor" title="미팅룸 유리문"><i></i><i></i></div>
+    <div class="room__doorB" title="미팅룸 유리문"></div>
+  </div>
+
+  <!-- 미팅룸 아래 회의 소집 버튼 -->
+  <div class="mtButtons" style="left:${MEETING_ROOM.col*T}px;top:${(MEETING_ROOM.row + MEETING_ROOM.h + 0.4)*T}px;width:${MEETING_ROOM.w*T}px">
+    <button class="mtBtnFloor" data-mtf="call-region">지역팀장 소집</button>
+    <button class="mtBtnFloor" data-mtf="call-all">전체팀장 소집</button>
+    <button class="mtBtnFloor end" data-mtf="end">회의 종료</button>
   </div>`;
 }
 
 // 휴게 공간 — 커피머신·정수기·냉장고·간식·테이블
 function loungeHTML(){
-  return `<div class="room2 lounge" id="lounge">
+  return `<div class="room2 lounge room--fixed" id="lounge" style="${box(LOUNGE)}"
+               data-col="${LOUNGE.col}" data-row="${LOUNGE.row}">
+    <div class="room__doorL" style="top:${(LOUNGE.door.row - LOUNGE.row)*T - T*0.9}px"></div>
     <div class="room2__label">
       <svg class="ico" viewBox="0 0 24 24"><path d="M5 8h11v7a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z" fill="none" stroke="#E9B93F" stroke-width="2"/><path d="M16 10h3a2 2 0 0 1 0 4h-3" fill="none" stroke="#E9B93F" stroke-width="2"/></svg>
       ${LOUNGE.name} <span class="en">${LOUNGE.nameEn}</span>
@@ -651,58 +721,77 @@ function loungeHTML(){
   </div>`;
 }
 
-// 업무 현황판
-function statusBoardHTML(){
-  return `<div class="room2 board" id="statusBoard">
+// 화장실 (맨 오른쪽, 휴게공간 아래)
+function restroomHTML(){
+  return `<div class="room2 restroom room--fixed" id="restroom" style="${box(RESTROOM)}"
+               data-col="${RESTROOM.col}" data-row="${RESTROOM.row}">
+    <div class="room__doorL" style="top:${(RESTROOM.door.row - RESTROOM.row)*T - T*0.9}px"></div>
     <div class="room2__label">
-      <svg class="ico" viewBox="0 0 24 24"><path d="M4 4h16v14H4z" fill="none" stroke="#2FBF8B" stroke-width="2"/><path d="M7 14v-3M12 14V8M17 14v-5" stroke="#2FBF8B" stroke-width="2"/></svg>
-      업무 현황판 <span class="en">STATUS BOARD</span>
+      <svg class="ico" viewBox="0 0 24 24"><circle cx="8" cy="4.5" r="2" fill="#8FBFC6"/><path d="M5.5 9h5l1 6h-2v5h-3v-5h-2z" fill="#8FBFC6"/><circle cx="16.5" cy="4.5" r="2" fill="#C9A9D8"/><path d="M13.5 9h6l-1.5 6h-1v5h-2v-5h-1z" fill="#C9A9D8"/></svg>
+      ${RESTROOM.name} <span class="en">${RESTROOM.nameEn}</span>
     </div>
-    <div class="board__body" id="boardBody"></div>
+    <div class="restroom__body">
+      <div class="stall"><i></i></div>
+      <div class="stall"><i></i></div>
+      <div class="sink"><span></span><span></span></div>
+    </div>
   </div>`;
 }
 
-// 정문 + 좌우 유리벽 + 안내 데스크
+// 정문 + 좌우 유리벽 + 안내 데스크 (도면 하단)
 function entranceHTML(){
-  return `<div class="frontZone">
-    <div class="glassWall left">
-      <div class="reception">
-        <div class="reception__desk"></div>
-        <div class="reception__sign">안내</div>
-      </div>
+  const e = ENTRANCE;
+  const wallH = 2.2;
+  return `
+    <div class="glassWall left"  style="left:0;top:${(e.row-0.4)*T}px;width:${(e.col-e.w/2)*T}px;height:${wallH*T}px">
+      <div class="wallLogo">${COMPANY.nameKo}</div>
+    </div>
+    <div class="glassWall right" style="left:${(e.col+e.w/2)*T}px;top:${(e.row-0.4)*T}px;width:${(GRID.cols-(e.col+e.w/2))*T}px;height:${wallH*T}px"></div>
+
+    <div class="reception" style="${box(RECEPTION)}">
+      <div class="reception__desk"></div>
+      <div class="reception__sign">안내</div>
     </div>
 
-    <div class="frontDoor" id="frontDoor">
+    <div class="frontDoor" id="frontDoor"
+         style="left:${(e.col-e.w/2)*T}px;top:${(e.row-1.4)*T}px;width:${e.w*T}px">
       <div class="doorHeader">
         <span class="logo">${COMPANY.name}</span>
         <span class="floorTag">${COMPANY.floor}</span>
       </div>
-      <div class="doorFrame" id="entrance" data-col="${ENTRANCE.col}" data-row="${ENTRANCE.row}">
+      <div class="doorFrame" id="entrance" data-col="${e.col}" data-row="${e.row}">
         <div class="doorLeaf l"><i></i></div>
         <div class="doorLeaf r"><i></i></div>
       </div>
-      <div class="doorLabel">${ENTRANCE.label} · ${COMPANY.tagline}</div>
-    </div>
-
-    <div class="glassWall right">
-      <div class="wallLogo">${COMPANY.nameKo}</div>
-    </div>
-  </div>`;
+      <div class="doorLabel">${e.label} · ${COMPANY.tagline}</div>
+    </div>`;
 }
 
-/* ===================== 사무실 렌더링 ===================== */
-export function buildFloor(){
-  // 팀장이 항상 맨 앞에 오도록 정렬한다 (팀장 → 과장 → 대리 → 사원)
-  const byRank = (a,b) => RANKS.indexOf(a.rank) - RANKS.indexOf(b.rank);
+/* ═══════════════════════════════════════════════════════════════
+   사무실 렌더링 — 절대 좌표 도면
 
-  const roomHTML = t => {
-    const mem = STAFF.filter(s=>s.t===t.id).sort(byRank);
-    const leader = mem.find(s=>s.rank==='팀장');
-    return `<div class="room ${t.kind}" id="room-${t.id}" data-col="0" data-row="0" style="--accent:${t.accent}">
-      <h3><span class="dot"></span>${t.name}<span class="kindTag">${t.kind==='region'?'지역':'기능'}</span></h3>
-      <div class="sub">${t.sub} · ${mem.length}명${leader?` · 팀장 ${leader.n}`:''}</div>
-      <div class="desks">${mem.map(s=>`
-        <div class="desk${s.rank==='팀장'?' leader':''}" data-n="${s.n}" data-st="미출근">
+   방을 CSS 그리드로 흘리지 않고 data/layout.js 의 타일 좌표에 그대로 놓는다.
+   그래야 캐릭터가 복도를 따라 실제 위치로 걸어갈 수 있다.
+   ═══════════════════════════════════════════════════════════════ */
+const box = r => `left:${r.col*T}px;top:${r.row*T}px;width:${r.w*T}px;height:${r.h*T}px`;
+
+export function buildFloor(){
+  const byRank = (a,b) => RANKS.indexOf(a.rank) - RANKS.indexOf(b.rank);
+  const roomPos = layoutTeamRooms(TEAMS.map(t => t.id));
+
+  /* ── 팀 룸 ── */
+  const teamRooms = TEAMS.map(t => {
+    const mem = STAFF.filter(s => s.t === t.id).sort(byRank);
+    const rp = roomPos[t.id];
+    const slots = deskSlots(mem.length);
+    const leader = mem.find(s => s.rank === '팀장');
+
+    const desks = mem.map((s, i) => {
+      const sl = slots[i];
+      // 이 직원의 절대 좌표를 기억해둔다 (이동 목적지로 쓴다)
+      deskPos[s.n] = { col: rp.col + sl.col, row: rp.row + sl.row, door: rp.door, team: t.id };
+      return `<div class="desk${s.rank==='팀장'?' leader':''}" data-n="${s.n}" data-st="미출근"
+                   style="left:${sl.col*T}px;top:${sl.row*T}px">
           <span class="led"></span>
           <div class="seat">
             <div class="seat__chair">${officeChair(s.rank==='팀장')}</div>
@@ -710,77 +799,124 @@ export function buildFloor(){
             <div class="seat__desk">${workDesk(s.t, { isLeader: s.rank==='팀장' })}</div>
           </div>
           ${nameplate(s)}
-        </div>`).join('')}</div>
+        </div>`;
+    }).join('');
+
+    return `<div class="room ${t.kind} side-${rp.side}" id="room-${t.id}"
+                 style="${box(rp)};--accent:${t.accent}"
+                 data-col="${rp.col}" data-row="${rp.row}">
+      <div class="room__door" style="top:${(rp.door.row - rp.row)*T - T*0.9}px"></div>
+      <h3><span class="dot"></span>${t.name}<span class="kindTag">${t.kind==='region'?'지역':'기능'}</span></h3>
+      <div class="sub">${t.sub} · ${mem.length}명${leader?` · 팀장 ${leader.n}`:''}</div>
+      <div class="desks">${desks}</div>
     </div>`;
-  };
+  }).join('');
 
-  const regionHTML = TEAMS.filter(t=>t.kind==='region').map(roomHTML).join('');
-  const functionHTML = TEAMS.filter(t=>t.kind==='function').map(roomHTML).join('');
-
-  const queueHTML = CEO_QUEUE.map(q=>`<div class="qslot" data-slot="${q.slot}" data-col="${q.col}" data-row="${q.row}">${q.slot}</div>`).join('');
+  /* ── 보고 대기줄: 바닥 발자국 표시 ── */
+  const queueMarks = CEO_QUEUE.map(q => `
+    <div class="qmark" data-slot="${q.slot}" style="left:${q.col*T}px;top:${q.row*T}px">
+      <svg viewBox="0 0 24 16" width="24" height="16">
+        <ellipse cx="7" cy="8" rx="3.4" ry="5" fill="currentColor" opacity=".5"/>
+        <ellipse cx="17" cy="9" rx="3.4" ry="5" fill="currentColor" opacity=".35"/>
+      </svg>
+      <span>${q.slot}</span>
+    </div>`).join('');
 
   $('floor').innerHTML = `
-    <div class="ceoRoom" data-col="${CEO_ROOM.col}" data-row="${CEO_ROOM.row}" data-w="${CEO_ROOM.w}" data-h="${CEO_ROOM.h}">
-      <div class="ceoRoom__label">
-        <svg class="crown" viewBox="0 0 24 24"><path d="M2 8l4 3 6-7 6 7 4-3-2 11H4L2 8z" fill="#E7C066"/></svg>
-        대표실 <span class="en">EXECUTIVE OFFICE</span>
-        <span class="ceoRoom__present"><i></i>대표 재실중</span>
-      </div>
-      <div class="ceoRoom__scene">
-        <div class="ceoRoom__shelf">${ceoBookshelf()}</div>
-        <div class="ceoRoom__window">${ceoWindowSkyline()}</div>
-        <div class="ceoRoom__plaque">AURAKOREA<br>1F · CEO</div>
-        <div class="ceoRoom__rug"></div>
-        <div class="ceoRoom__deskWrap">
-          ${ceoScene()}
-          <div class="ceoRoom__nameplate">${CEO.name} · ${CEO.title}</div>
-        </div>
-        <div class="ceoRoom__plant">${ceoPlant()}</div>
-      </div>
-    </div>
+    <div class="plan" style="width:${GRID.cols*T}px;height:${GRID.rows*T}px">
 
-    <div class="hqRoom" id="hqRoom">
-      <div class="hqRoom__label">
-        본부장실 <span class="en">HQ OFFICE</span>
-        <span class="hqRoom__present"><i></i>재실중</span>
-      </div>
-      <div class="hqRoom__scene">
-        <div class="hqRoom__deskWrap">
-          ${hqScene()}
-          <div class="hqRoom__nameplate">${HQ_MANAGER.name} · ${HQ_MANAGER.title}</div>
+      <!-- 중앙 세로 복도 + 각 방 앞 가로 통로 -->
+      <div class="corridorV" id="corridor"
+           style="left:${CORRIDOR.x*T}px;top:${CORRIDOR.top*T}px;
+                  width:${CORRIDOR.w*T}px;height:${(CORRIDOR.bottom-CORRIDOR.top)*T}px"></div>
+      ${TEAMS.map(t => {
+        const rp = roomPos[t.id];
+        const left = rp.side === 'left' ? rp.col + rp.w : CORRIDOR.x + CORRIDOR.w;
+        const w = rp.side === 'left' ? CORRIDOR.x - (rp.col + rp.w) : rp.col - (CORRIDOR.x + CORRIDOR.w);
+        return `<div class="corridorH" style="left:${left*T}px;top:${(rp.door.row-0.9)*T}px;width:${w*T}px;height:${1.8*T}px"></div>`;
+      }).join('')}
+      <div class="corridorH" style="left:${(CORRIDOR.x+CORRIDOR.w)*T}px;top:${(LOUNGE.door.row-0.9)*T}px;width:${(LOUNGE.col-CORRIDOR.x-CORRIDOR.w)*T}px;height:${1.8*T}px"></div>
+      <div class="corridorH" style="left:${(CORRIDOR.x+CORRIDOR.w)*T}px;top:${(RESTROOM.door.row-0.9)*T}px;width:${(RESTROOM.col-CORRIDOR.x-CORRIDOR.w)*T}px;height:${1.8*T}px"></div>
+
+      <!-- 대표실 -->
+      <div class="ceoRoom room--fixed" style="${box(CEO_ROOM)}" data-col="${CEO_ROOM.col}" data-row="${CEO_ROOM.row}">
+        <div class="ceoRoom__label">
+          <svg class="crown" viewBox="0 0 24 24"><path d="M2 8l4 3 6-7 6 7 4-3-2 11H4L2 8z" fill="#E7C066"/></svg>
+          대표실 <span class="en">EXECUTIVE OFFICE</span>
+          <span class="ceoRoom__present"><i></i>재실중</span>
         </div>
-        <div class="hqRoom__info">
-          <div class="hqRoom__chain">
-            <b>보고 경로</b>
-            <span>팀원</span><i>→</i><span>팀장</span><i>→</i><span class="me">본부장</span><i>→</i><span class="ceo">대표</span>
+        <div class="ceoRoom__scene">
+          <div class="ceoRoom__shelf">${ceoBookshelf()}</div>
+          <div class="ceoRoom__window">${ceoWindowSkyline()}</div>
+          <div class="ceoRoom__plaque">AURAKOREA<br>1F · CEO</div>
+          <div class="ceoRoom__rug"></div>
+          <div class="ceoRoom__deskWrap">
+            ${ceoScene()}
+            <div class="ceoRoom__nameplate">${CEO.name} · ${CEO.title}</div>
+          </div>
+          <div class="ceoRoom__plant">${ceoPlant()}</div>
+        </div>
+        <div class="room__doorB"></div>
+      </div>
+
+      <!-- 대표실 앞 보고 대기줄 (바닥 발자국) -->
+      <div class="queueMarks">${queueMarks}</div>
+      <div class="queueLabel" style="left:${(CORRIDOR.cx+2.2)*T}px;top:${(CEO_ROOM.row+CEO_ROOM.h+0.4)*T}px">보고 대기줄</div>
+      <div id="queueLayer" class="queueLayer"></div>
+
+      <!-- 본부장실 -->
+      <div class="hqRoom room--fixed" id="hqRoom" style="${box(HQ_ROOM)}" data-col="${HQ_ROOM.col}" data-row="${HQ_ROOM.row}">
+        <div class="hqRoom__label">
+          본부장실 <span class="en">HQ OFFICE</span>
+          <span class="hqRoom__present"><i></i>재실중</span>
+        </div>
+        <div class="hqRoom__scene">
+          <div class="hqRoom__deskWrap">
+            ${hqScene()}
+            <div class="hqRoom__nameplate">${HQ_MANAGER.name} · ${HQ_MANAGER.title}</div>
           </div>
           <div class="hqRoom__status">현재 <b id="hqStatus">대표님 지시 대기</b></div>
         </div>
+        <div class="room__doorB"></div>
       </div>
-    </div>
 
-    <div class="queueRow"><span class="ql">보고 대기줄</span>${queueHTML}</div>
-    <div class="corridor" id="corridor"></div>
-    <div class="zoneLabel">지역본부</div>
-    <div class="teamGrid region">${regionHTML}</div>
-    <div class="zoneLabel">기능팀</div>
-    <div class="teamGrid">${functionHTML}</div>
-
-    <div class="corridor" id="corridor2"></div>
-    <div class="zoneLabel">공용 공간</div>
-    <div class="commonGrid">
+      <!-- 미팅룸 (본부장실 바로 아래) + 소집 버튼 -->
       ${meetingRoomHTML()}
-      ${loungeHTML()}
-      ${statusBoardHTML()}
-    </div>
 
-    ${entranceHTML()}
-    <div id="walkers"></div>
+      <!-- 팀 룸 -->
+      ${teamRooms}
+
+      <!-- 맨 오른쪽: 휴게공간 · 화장실 -->
+      ${loungeHTML()}
+      ${restroomHTML()}
+
+      <!-- 정문 -->
+      ${entranceHTML()}
+
+      <div id="walkers" class="walkers"></div>
+    </div>
   `;
 
-  $('staffCount').textContent = 'AI STAFF '+STAFF.length;
-  document.querySelectorAll('.desk').forEach(d=>{
-    d.onclick = ()=>select(d.dataset.n);
+  $('staffCount').textContent = 'AI STAFF ' + STAFF.length;
+  document.querySelectorAll('.desk').forEach(d => {
+    d.onclick = () => select(d.dataset.n);
+  });
+  registerMeetingSeatPositions();
+}
+
+/* 미팅룸 좌석의 절대 좌표를 등록한다 (회의 참석자가 여기로 걸어간다) */
+function registerMeetingSeatPositions(){
+  const m = MEETING_ROOM;
+  document.querySelectorAll('.mseat').forEach(el => {
+    const name = el.dataset.seat;
+    const r = el.getBoundingClientRect();
+    const planEl = document.querySelector('.plan');
+    if(!planEl) return;
+    const pr = planEl.getBoundingClientRect();
+    registerMeetingSeat(name, {
+      col: (r.left - pr.left + r.width/2) / T,
+      row: (r.top  - pr.top  + r.height/2) / T,
+    });
   });
 }
 
@@ -888,10 +1024,6 @@ export function select(name, simMin = lastSimMin){
       ${st.lastReal.note ? `<div class="note">${escapeHtml(st.lastReal.note)}</div>` : ''}
     </div>` : '';
   const leaderName = LEADER_OF[s.t];
-  // 보고 경로: 팀원이면 팀장을 거치고, 팀장이면 바로 본부장에게 보고한다.
-  const chain = s.rank === '팀장'
-    ? `${s.n} → ${HQ_MANAGER.name} 본부장 → ${CEO.name} 대표님`
-    : `${s.n} → ${leaderName} 팀장 → ${HQ_MANAGER.name} 본부장 → ${CEO.name} 대표님`;
   $('detail').innerHTML = `
     <h4>${s.n} <span class="rankTag${s.rank==='팀장'?' lead':''}">${s.rank}</span></h4>
     <div class="kv"><span>담당</span><span>${s.r}</span></div>
@@ -901,15 +1033,80 @@ export function select(name, simMin = lastSimMin){
     <div class="kv"><span>현재 상태</span><span>${st.st}</span></div>
     <div class="kv"><span>오늘 처리</span><span>${st.done}건</span></div>
     <div class="duty">${s.duty}</div>
-    <div class="chainBox"><b>보고 경로</b>${chain}</div>
     <button class="go" id="goBtn">이 직원에게 직접 지시</button>
     ${realBlock}`;
   $('goBtn').onclick = ()=>{ $('cmd').focus(); $('cmd').placeholder = `${s.n}에게 지시…`; };
   paint(simMin);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   평상시 자동 움직임 — 순수 화면 연출
+
+   ★ AI를 호출하지 않는다. API 요청이 단 한 번도 발생하지 않는다.
+   ★ 이동 사유는 data/layout.js 의 IDLE_ACTIVITIES 에서 무작위로 고른다 (생성하지 않는다).
+   ★ 동시에 자리를 비우는 인원은 IDLE_MAX_CONCURRENT(3명)로 제한한다.
+   ★ 업무 로그를 더럽히지 않는다 — "사내 활동" 로그로 따로 남긴다.
+   ═══════════════════════════════════════════════════════════════ */
+let idleActive = 0;
+export function idleCount(){ return idleActive; }
+
+/* 목적지 좌표를 고른다 (휴게공간 / 화장실 / 다른 팀 / 복도) */
+function idleTarget(activity, me){
+  if(activity.to === 'lounge')
+    return { col: LOUNGE.col + 3, row: LOUNGE.row + 6, door: LOUNGE.door };
+  if(activity.to === 'restroom')
+    return { col: RESTROOM.col + 4, row: RESTROOM.row + 4, door: RESTROOM.door };
+  if(activity.to === 'team'){
+    const others = STAFF.filter(x => x.t !== me.t && deskPos[x.n]);
+    if(!others.length) return null;
+    const other = others[Math.floor(Math.random() * others.length)];
+    const d = deskPos[other.n];
+    return { col: d.col - 1.2, row: d.row + 0.8, door: d.door, who: other.n };
+  }
+  // 복도를 그냥 지나간다
+  return { col: CORRIDOR.cx, row: CORRIDOR.top + 4 + Math.random() * (CORRIDOR.bottom - CORRIDOR.top - 8) };
+}
+
+/* 한 명을 잠깐 자리에서 내보냈다가 반드시 자기 자리로 복귀시킨다 */
+export function idleWander(name, activity, simMin, onLog){
+  if(idleActive >= IDLE_MAX_CONCURRENT) return Promise.resolve(false);
+  const s = STAFF.find(x => x.n === name);
+  const desk = deskPos[name];
+  if(!s || !desk || state[name].away) return Promise.resolve(false);
+
+  const target = idleTarget(activity, s);
+  if(!target) return Promise.resolve(false);
+
+  idleActive++;
+  return withWalkLock(name, async () => {
+    state[name].away = true;
+    if(activity.say) state[name].bubble = activity.say;
+    paint(simMin);
+    if(onLog) onLog(`${name} — ${activity.label}`);
+
+    const w = spawnWalker(s);
+    placeAt(w, desk);
+    await walkBetween(w, desk, target);
+    await new Promise(r => setTimeout(r, activity.stayMs / walkSpeed));
+    await walkBetween(w, target, desk);   // 반드시 자기 자리로 복귀
+    w.remove();
+
+    state[name].away = false;
+    state[name].bubble = null;
+    paint(simMin);
+    return true;
+  }).finally(() => { idleActive--; });
+}
+
 export function initOffice(){
   buildFloor();
   paint(SIM_WINDOW.open);
   renderAgenda();
+}
+
+/* 도면 위 회의 소집 버튼을 meeting.js 의 동작에 연결한다 */
+export function bindFloorMeetingButtons(handlers){
+  document.querySelectorAll('[data-mtf]').forEach(b => {
+    b.onclick = () => handlers[b.dataset.mtf] && handlers[b.dataset.mtf]();
+  });
 }
