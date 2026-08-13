@@ -39,6 +39,34 @@ body{
 }
 button{font-family:inherit;cursor:pointer}
 
+/* ---------- 로그인 게이트 ---------- */
+.authGate{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:
+    radial-gradient(140% 120% at 18% 0%, rgba(231,192,102,.14), transparent 55%),
+    linear-gradient(155deg, var(--exec-wall-1), var(--exec-wall-2));
+  padding:20px;
+}
+.authBox{
+  width:100%;max-width:300px;background:var(--console);border:3px solid var(--exec-gold);
+  border-radius:14px;padding:22px 20px;text-align:center;color:#EDE6F5;
+  box-shadow:0 10px 26px rgba(20,10,30,.35);
+}
+.authTitle{font-size:15px;letter-spacing:.5px;margin-bottom:6px}
+.authTitle b{color:var(--neon)}
+.authSub{font-size:11px;color:var(--slate);margin-bottom:16px}
+.authBox input{
+  width:100%;background:var(--console-2);border:1px solid #453A5C;color:#fff;
+  border-radius:6px;padding:10px;font-size:12px;font-family:inherit;text-align:center;
+  margin-bottom:10px;
+}
+.authBox input:focus{outline:none;border-color:var(--neon)}
+.authBox button{
+  width:100%;background:var(--exec-gold);border:0;color:#2B2140;border-radius:6px;
+  padding:10px;font-size:12px;font-family:inherit;
+}
+.authErr{font-size:10px;color:#FF9AA0;margin-top:10px;min-height:14px}
+
 /* ---------- top bar ---------- */
 .topbar{
   display:flex;align-items:center;gap:14px;flex-wrap:wrap;

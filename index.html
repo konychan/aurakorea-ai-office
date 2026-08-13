@@ -9,6 +9,18 @@
 </head>
 <body>
 
+<div class="authGate" id="authGate">
+  <div class="authBox">
+    <div class="authTitle">AURAKOREA <b>AI OFFICE</b></div>
+    <div class="authSub">비밀번호를 입력하세요</div>
+    <input type="password" id="authPw" placeholder="비밀번호" autocomplete="current-password">
+    <button id="authBtn">입장</button>
+    <div class="authErr" id="authErr"></div>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none">
+
 <div class="topbar">
   <div class="brand">AURAKOREA <b>AI COMPANY</b></div>
   <div class="tag" id="staffCount">AI STAFF 0</div>
@@ -92,22 +104,56 @@
   </div>
 </div>
 
+</div>
+
 <script type="module">
   import { initOffice, $, log } from './src/office.js';
   import { initSim } from './src/sim.js';
   import { initConsole } from './src/console.js';
   import { SIM_WINDOW } from './data/layout.js';
 
-  initOffice();
-  initSim();
-  initConsole();
-  log(SIM_WINDOW.open, '시스템','아우라코리아 AI 오피스 부팅 완료. 하루 시작을 누르세요.');
+  function startApp(){
+    document.getElementById('authGate').style.display = 'none';
+    document.getElementById('appRoot').style.display = '';
+    initOffice();
+    initSim();
+    initConsole();
+    log(SIM_WINDOW.open, '시스템','아우라코리아 AI 오피스 부팅 완료. 하루 시작을 누르세요.');
+    setInterval(()=>{
+      const now = new Date(Date.now() + (new Date().getTimezoneOffset()*60000) + 9*3600000);
+      const pad = n => String(n).padStart(2,'0');
+      $('realClock').textContent = pad(now.getHours())+':'+pad(now.getMinutes());
+    }, 1000);
+  }
 
-  setInterval(()=>{
-    const now = new Date(Date.now() + (new Date().getTimezoneOffset()*60000) + 9*3600000);
-    const pad = n => String(n).padStart(2,'0');
-    $('realClock').textContent = pad(now.getHours())+':'+pad(now.getMinutes());
-  }, 1000);
+  async function boot(){
+    // /api/session-check 가 없는 환경(로컬 node server.js 등)에서는 비밀번호 없이 바로 시작한다.
+    let authed = true;
+    try{
+      const res = await fetch('/api/session-check');
+      if(res.ok){ authed = !!(await res.json()).ok; }
+    }catch(e){ /* 로컬 개발 환경: 그대로 통과 */ }
+
+    if(authed){ startApp(); return; }
+
+    const pwInput = document.getElementById('authPw');
+    const errBox = document.getElementById('authErr');
+    async function submit(){
+      errBox.textContent = '';
+      const res = await fetch('/api/login', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ password: pwInput.value }),
+      });
+      const data = await res.json();
+      if(data.ok){ startApp(); }
+      else{ errBox.textContent = data.error || '입장할 수 없습니다.'; }
+    }
+    document.getElementById('authBtn').onclick = submit;
+    pwInput.onkeydown = e=>{ if(e.key==='Enter') submit(); };
+    pwInput.focus();
+  }
+
+  boot();
 </script>
 </body>
 </html>
