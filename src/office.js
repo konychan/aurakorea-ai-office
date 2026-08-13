@@ -3,6 +3,7 @@ import { STAFF, RANKS, LEADER_OF } from '../data/staff.js';
 import { CEO, HQ_MANAGER, CEO_ROOM, CEO_QUEUE, ENTRANCE, WORK_HOURS, SIM_WINDOW,
          COMPANY, MEETING_ROOM, LOUNGE } from '../data/layout.js';
 import { character, vipCharacter } from './character.js';
+import { workDesk, nameplate, officeChair, MONITOR_STATE } from './furniture.js';
 
 /* ===================== 공용 유틸 (시계 표기) ===================== */
 export const $ = id => document.getElementById(id);
@@ -500,9 +501,13 @@ export function buildFloor(){
       <div class="sub">${t.sub} · ${mem.length}명${leader?` · 팀장 ${leader.n}`:''}</div>
       <div class="desks">${mem.map(s=>`
         <div class="desk${s.rank==='팀장'?' leader':''}" data-n="${s.n}" data-st="미출근">
-          <span class="led"></span>${avatar(s)}
-          <div class="nm">${s.n}<span class="rank">${s.rank}</span></div>
-          <div class="rl">${s.r}</div>
+          <span class="led"></span>
+          <div class="seat">
+            <div class="seat__chair">${officeChair(s.rank==='팀장')}</div>
+            <div class="seat__person">${avatar(s)}</div>
+            <div class="seat__desk">${workDesk(s.t, { isLeader: s.rank==='팀장' })}</div>
+          </div>
+          ${nameplate(s)}
         </div>`).join('')}</div>
     </div>`;
   };
@@ -618,6 +623,13 @@ export function paint(simMin){
     d.dataset.st = st.st;
     d.classList.toggle('sel', selected===s.n);
     d.classList.toggle('away', !!st.away);
+
+    // 모니터 화면에 담당자의 현재 업무 상태를 표시한다 (헌장 9-7)
+    const mon = MONITOR_STATE[st.away ? '미출근' : st.st] || MONITOR_STATE['미출근'];
+    const scr = d.querySelector('.monScreen');
+    const txt = d.querySelector('.monText');
+    if(scr) scr.setAttribute('fill', mon.bg);
+    if(txt){ txt.textContent = st.away ? '자리비움' : mon.text; txt.setAttribute('fill', mon.fg); }
 
     // 머리 위 상태 표시 (헌장 10항)
     let tag = d.querySelector('.statusTag');
