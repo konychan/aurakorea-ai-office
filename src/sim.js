@@ -1,7 +1,10 @@
-import { STAFF, TASKS, AGENDAS } from '../data/staff.js';
+import { STAFF, TASKS, AGENDAS, CHATS } from '../data/staff.js';
 import { WORK_HOURS, SIM_WINDOW } from '../data/layout.js';
-import { $, state, paint, log, select, selected, submitAgenda, resolveAgenda, arriveWalk, leaveWalk } from './office.js';
+import { $, state, paint, log, select, selected, submitAgenda, resolveAgenda, arriveWalk, leaveWalk, chatWith } from './office.js';
 import { runRealAgent } from './agent.js';
+
+const CHAT_BY_SENDER = {};
+CHATS.forEach(c => { (CHAT_BY_SENDER[c.from] ||= []).push(c); });
 
 let simMin = SIM_WINDOW.open;
 let running = false;
@@ -46,6 +49,13 @@ function tick(){
       const title = AGENDAS[s.t][Math.floor(Math.random()*AGENDAS[s.t].length)];
       submitAgenda(s.n, title, simMin);
       log(simMin, s.n, `"${title}" 결재 상신. 대표님 결재를 기다립니다.`);
+      if(track) focusRoom(s.t);
+    } else if(CHAT_BY_SENDER[s.n] && simMin >= (st.nextChatAt||0) && Math.random() < 0.03*speed){
+      const options = CHAT_BY_SENDER[s.n];
+      const c = options[Math.floor(Math.random()*options.length)];
+      const reply = c.replies[Math.floor(Math.random()*c.replies.length)];
+      st.nextChatAt = simMin + 45; // 같은 직원이 연달아 대화를 시작하지 못하도록 쿨다운
+      chatWith(s.n, c.to, c.ask, reply, simMin);
       if(track) focusRoom(s.t);
     } else if(s.real){
       // 1호 실제 에이전트: 가짜 업무 목록 대신, 쿨다운이 지나면 실제 웹 검색을 수행한다

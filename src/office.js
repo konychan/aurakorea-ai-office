@@ -155,6 +155,54 @@ async function _returnFromReport(name, simMin){
   paint(simMin);
 }
 
+/* ===================== 직원 간 소통 (5단계) =====================
+   무한 루프 방지 3중 장치:
+   1) "질문 → 미리 정한 답변" 1회로 끝나는 단방향 대화만 존재한다. 답변이 새 질문을 만들지 않으므로
+      데이터 구조상 대화가 스스로를 다시 트리거할 수 없다 (data/staff.js CHATS 참고).
+   2) chatActive 로 사무실 전체에서 동시에 진행되는 대화를 1건으로 제한한다.
+   3) 발신자별 쿨다운(sim.js의 nextChatAt)으로 같은 직원이 연달아 대화를 시작하지 못하게 막는다.   */
+let chatActive = false;
+export function chatWith(fromName, toName, ask, reply, simMin){
+  if(chatActive) return Promise.resolve();
+  const target = state[toName];
+  if(!target || (target.st !== '근무중' && target.st !== '처리중')) return Promise.resolve();
+  chatActive = true;
+  return withWalkLock(fromName, ()=>_chatWith(fromName, toName, ask, reply, simMin))
+    .finally(()=>{ chatActive = false; });
+}
+
+async function _chatWith(fromName, toName, ask, reply, simMin){
+  const sFrom = STAFF.find(x=>x.n===fromName);
+  const fromDesk = document.querySelector(`.desk[data-n="${fromName}"]`);
+  const toDesk = document.querySelector(`.desk[data-n="${toName}"]`);
+  if(!fromDesk || !toDesk) return;
+
+  state[fromName].away = true;
+  paint(simMin);
+  const w = spawnWalker(sFrom);
+  const fromPos = relPos(fromDesk), deskPos = relPos(toDesk);
+  const toPos = { x: deskPos.x - 24, y: deskPos.y }; // 말풍선이 겹치지 않도록 상대 옆에 선다
+  await walkPath(w, [fromPos, {x:toPos.x,y:fromPos.y}, toPos]);
+  log(simMin, fromName, `${toName} 자리로 가서 물었습니다: "${ask}"`);
+
+  const askBubble = document.createElement('div');
+  askBubble.className = 'bubble';
+  askBubble.textContent = ask;
+  w.appendChild(askBubble);
+  state[toName].bubble = reply;
+  state[toName].bt = simMin;
+  paint(simMin);
+
+  await new Promise(r=>setTimeout(r, 1300));
+  log(simMin, toName, `${fromName}에게 답했습니다: "${reply}"`);
+  askBubble.remove();
+
+  await walkPath(w, [toPos, {x:fromPos.x,y:toPos.y}, fromPos]);
+  w.remove();
+  state[fromName].away = false;
+  paint(simMin);
+}
+
 /* ===================== 결재 큐 (직원 안건 → 대표 승인/반려) ===================== */
 export const agendaQueue = [];
 let agendaSeq = 1;
