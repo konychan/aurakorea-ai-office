@@ -14,6 +14,52 @@ STAFF.forEach(s=>{ state[s.n] = { st:'미출근', done:0, bubble:null, bt:0 }; }
 
 export let selected = null;
 
+/* ===================== 결재 큐 (직원 안건 → 대표 승인/반려) ===================== */
+export const agendaQueue = [];
+let agendaSeq = 1;
+
+export function submitAgenda(name, title, simMin){
+  const s = STAFF.find(x=>x.n===name);
+  const item = { id: agendaSeq++, name, team: s.t, title, simMin };
+  agendaQueue.push(item);
+  state[name].st = '보고대기';
+  state[name].bubble = title;
+  state[name].bt = simMin;
+  renderAgenda();
+  return item;
+}
+
+export function resolveAgenda(id, approved, simMin){
+  const idx = agendaQueue.findIndex(a=>a.id===id);
+  if(idx<0) return;
+  const item = agendaQueue[idx];
+  agendaQueue.splice(idx,1);
+  const st = state[item.name];
+  st.st = '근무중'; st.bt = simMin;
+  st.bubble = approved ? '승인 완료' : '반려됨';
+  if(approved) st.done++;
+  log(simMin, '대표', `"${item.title}" (${item.name}) ${approved?'승인':'반려'}.`);
+  renderAgenda();
+  paint(simMin);
+}
+
+function renderAgenda(){
+  const el = $('agendaQueue');
+  if(!el) return;
+  $('agendaBadge').textContent = agendaQueue.length;
+  el.innerHTML = agendaQueue.length
+    ? agendaQueue.map(a=>`
+      <div class="agenda">
+        <div class="agenda__t"><b>${a.name}</b><span>${hhmm(a.simMin)}</span></div>
+        <div class="agenda__m">${a.title}</div>
+        <div class="agenda__btns">
+          <button class="ok" data-act="approve" data-id="${a.id}">승인</button>
+          <button class="no" data-act="reject" data-id="${a.id}">반려</button>
+        </div>
+      </div>`).join('')
+    : `<div class="empty">대기 중인 결재 안건이 없습니다.</div>`;
+}
+
 /* ===================== 직원 아바타 ===================== */
 function avatar(s){
   return `<svg class="av" width="26" height="26" viewBox="0 0 26 26">
@@ -178,4 +224,5 @@ export function select(name, simMin){
 export function initOffice(){
   buildFloor();
   paint(SIM_WINDOW.open);
+  renderAgenda();
 }

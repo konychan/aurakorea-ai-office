@@ -299,3 +299,19 @@ button{font-family:inherit;cursor:pointer}
 .card .duty{font-size:10px;color:var(--ink-2);line-height:1.6;margin:7px 0 9px}
 .card .go{width:100%;background:var(--console);color:#fff;border:0;border-radius:7px;padding:8px;font-size:11px}
 .empty{font-size:10px;color:var(--ink-2);line-height:1.6}
+
+.card h4 .badge{
+  margin-left:auto;background:var(--rose);color:#fff;border-radius:999px;
+  min-width:16px;height:16px;padding:0 5px;font-size:10px;line-height:16px;text-align:center;
+}
+.card h4{display:flex;align-items:center}
+.agendaList{display:flex;flex-direction:column;gap:8px;max-height:230px;overflow:auto}
+.agenda{background:var(--room-2);border:2px solid var(--line);border-radius:8px;padding:7px 8px}
+.agenda__t{display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px}
+.agenda__t b{color:var(--ink)}
+.agenda__t span{color:var(--ink-2)}
+.agenda__m{font-size:10px;color:var(--ink-2);line-height:1.5;margin-bottom:7px}
+.agenda__btns{display:flex;gap:6px}
+.agenda__btns button{flex:1;border:0;border-radius:6px;padding:6px;font-size:10px;color:#fff}
+.agenda__btns .ok{background:var(--mint)}
+.agenda__btns .no{background:var(--rose)}
