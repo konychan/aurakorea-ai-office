@@ -140,10 +140,90 @@ button{font-family:inherit;cursor:pointer}
   border:3px solid var(--line);border-radius:12px;padding:14px;
 }
 
+/* ═══════════ 전신 캐릭터 (C 국면) ═══════════
+   모든 동작은 CSS로 처리한다 — 토큰을 쓰지 않는다. */
+.char{display:block;overflow:visible}
+
+/* 눈 깜박임 — 전 캐릭터 공통, 개체마다 시작 시점을 어긋나게 한다 */
+@keyframes blink{
+  0%, 92%, 100%{transform:scaleY(1)}
+  95%, 97%{transform:scaleY(.12)}
+}
+.char .eye{transform-origin:center 14px;animation:blink 5.4s infinite}
+.desk:nth-child(2n) .char .eye{animation-delay:-1.7s}
+.desk:nth-child(3n) .char .eye{animation-delay:-3.1s}
+.desk:nth-child(4n) .char .eye{animation-origin:center;animation-delay:-4.4s}
+
+/* 호흡 — 몸통이 아주 미세하게 오르내린다 */
+@keyframes breathe{
+  0%, 100%{transform:translateY(0) scaleY(1)}
+  50%{transform:translateY(-.5px) scaleY(1.012)}
+}
+.char .torso{transform-origin:center bottom;animation:breathe 3.6s ease-in-out infinite}
+.desk:nth-child(2n) .char .torso{animation-delay:-1.2s}
+.desk:nth-child(3n) .char .torso{animation-delay:-2.4s}
+
+/* 머리 미세 움직임 (주변 살펴보기) */
+@keyframes lookAround{
+  0%, 70%, 100%{transform:rotate(0deg)}
+  78%{transform:rotate(-3.5deg)}
+  88%{transform:rotate(3.5deg)}
+}
+.char .head{transform-origin:16px 20px;animation:lookAround 9s ease-in-out infinite}
+.desk:nth-child(2n) .char .head{animation-delay:-3s}
+.desk:nth-child(3n) .char .head{animation-delay:-6s}
+
+/* ── 앉아서 타이핑 ── 처리중일 때 손이 바쁘게 움직인다 */
+@keyframes typeL{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.6px)}}
+@keyframes typeR{0%,100%{transform:translateY(-1.6px)}50%{transform:translateY(0)}}
+.desk[data-st="처리중"] .char--sit .arm--l{animation:typeL .28s ease-in-out infinite}
+.desk[data-st="처리중"] .char--sit .arm--r{animation:typeR .28s ease-in-out infinite}
+/* 근무중에는 느긋하게 */
+.desk[data-st="근무중"] .char--sit .arm--l{animation:typeL 1.4s ease-in-out infinite}
+.desk[data-st="근무중"] .char--sit .arm--r{animation:typeR 1.4s ease-in-out infinite}
+
+/* ── 걷기 ── 다리가 교차하고 팔이 반대로 흔들린다 */
+@keyframes stepF{0%,100%{transform:rotate(24deg)}50%{transform:rotate(-24deg)}}
+@keyframes stepB{0%,100%{transform:rotate(-24deg)}50%{transform:rotate(24deg)}}
+@keyframes swingF{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(20deg)}}
+@keyframes swingB{0%,100%{transform:rotate(20deg)}50%{transform:rotate(-20deg)}}
+/* 걸을 때 몸이 살짝 위아래로 흔들린다 */
+@keyframes bob{0%,100%{transform:translateY(0)}25%,75%{transform:translateY(-1.4px)}}
+@keyframes shadowPulse{0%,100%{transform:scaleX(1);opacity:.22}50%{transform:scaleX(.82);opacity:.15}}
+
+.char--walk .leg--f{transform-origin:13px 37px;animation:stepF .52s ease-in-out infinite}
+.char--walk .leg--b{transform-origin:19px 37px;animation:stepB .52s ease-in-out infinite}
+.char--walk .arm--f{transform-origin:7px 27px;animation:swingF .52s ease-in-out infinite}
+.char--walk .arm--b{transform-origin:25px 27px;animation:swingB .52s ease-in-out infinite}
+.char--walk .head,
+.char--walk .torso{animation:bob .52s ease-in-out infinite}
+.char--walk .shadow{transform-origin:center;animation:shadowPulse .52s ease-in-out infinite}
+
 /* ---------- 캐릭터 이동 (걷기 오버레이) ---------- */
 #walkers{position:absolute;inset:0;pointer-events:none;z-index:30}
-.walker{position:absolute;top:0;left:0;width:26px;height:26px;transform:translate(-50%,-50%);filter:drop-shadow(0 3px 4px rgba(0,0,0,.35))}
-.desk.away .av{opacity:0;transform:translateY(6px)}
+.walker{
+  position:absolute;top:0;left:0;width:40px;height:65px;
+  transform:translate(-50%,-80%);
+  filter:drop-shadow(0 4px 5px rgba(0,0,0,.3));
+}
+/* 진행 방향에 따라 좌우 반전 */
+.walker.flip .char{transform:scaleX(-1)}
+
+/* 머리 위 상태 표시 — 카드 안쪽 상단에 둔다 */
+.statusTag{
+  position:absolute;left:50%;top:3px;transform:translateX(-50%);
+  font-size:8px;line-height:1;white-space:nowrap;
+  background:var(--console);color:#fff;padding:2px 6px;border-radius:999px;
+  box-shadow:0 2px 5px rgba(0,0,0,.28);z-index:6;
+}
+.statusTag.work{background:#1E7A57}
+.statusTag.busy{background:#A8791C}
+.statusTag.wait{background:#A32B55}
+.statusTag.move{background:#4A4166}
+
+.desk{position:relative}
+.desk.away .char{opacity:0;transform:translateY(6px)}
+.desk .char{transition:opacity .35s, transform .35s}
 
 /* ---------- 대표실 (executive office) ---------- */
 .ceoRoom{
@@ -220,11 +300,30 @@ button{font-family:inherit;cursor:pointer}
   opacity:.55;
 }
 
+/* ── 대표·본부장 씬: 의자 / 캐릭터 / 책상을 겹쳐 "책상 앞에 앉은" 구도를 만든다 ── */
+.vipScene{position:relative;display:flex;flex-direction:column;align-items:center}
+.vipChair{
+  position:absolute;left:50%;transform:translateX(-50%);
+  background:var(--chair);opacity:.9;border-radius:22px 22px 6px 6px;
+}
+.vipScene--ceo .vipChair{width:92px;height:62px;top:14px}
+.vipScene--hq  .vipChair{width:64px;height:42px;top:12px}
+.vipPerson{position:relative;z-index:1}
+.vipPerson .char{filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
+.vipScene--ceo .vipPerson .char{width:54px;height:87px}
+.vipScene--hq .vipPerson .char{width:38px;height:61px}
+.vipDesk{position:relative;z-index:2;margin-top:-30px}
+.vipScene--hq .vipDesk{margin-top:-22px}
+.vipDesk svg{display:block;filter:drop-shadow(0 3px 5px rgba(0,0,0,.3))}
+/* 대표·본부장은 자리를 뜨지 않으므로 걷기 동작을 끈다 */
+.vipPerson .char .leg,.vipPerson .char .arm{animation:none}
+
 .ceoRoom__deskWrap{position:relative;margin:0 auto;z-index:1}
 .ceoRoom__nameplate{
-  position:absolute;left:50%;bottom:-3px;transform:translateX(-50%);
+  position:absolute;left:50%;bottom:-14px;transform:translateX(-50%);
   background:var(--exec-gold);color:#2B2140;font-size:9px;letter-spacing:.5px;
   padding:2px 8px;border-radius:2px;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,.3);
+  z-index:3;
 }
 
 /* ---------- 본부장실 ---------- */
@@ -245,8 +344,9 @@ button{font-family:inherit;cursor:pointer}
 .hqRoom__scene{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
 .hqRoom__deskWrap{position:relative}
 .hqRoom__nameplate{
-  position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);
+  position:absolute;left:50%;bottom:-13px;transform:translateX(-50%);
   background:#9C8AAE;color:#1E1A26;font-size:9px;padding:2px 7px;border-radius:2px;white-space:nowrap;
+  z-index:3;
 }
 .hqRoom__chain{
   display:flex;align-items:center;gap:5px;flex-wrap:wrap;
@@ -271,12 +371,21 @@ button{font-family:inherit;cursor:pointer}
 }
 .queueRow .ql{color:var(--ink-2);margin-right:2px}
 .queueRow .qslot{
-  width:20px;height:20px;border:2px dashed var(--line);border-radius:5px;
-  display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--ink-2);
-  background:var(--room);
+  width:26px;height:40px;border:2px dashed var(--line);border-radius:5px;
+  display:flex;align-items:flex-end;justify-content:center;font-size:9px;color:var(--ink-2);
+  background:var(--room);padding-bottom:3px;
 }
-.queueRow .qslot svg{width:16px;height:16px}
-.queueRow .qslot.occ{border-style:solid;border-color:var(--rose);background:#FDF0F5}
+.queueRow .qslot .char{width:22px;height:36px}
+.queueRow .qslot.occ{
+  border-style:solid;border-color:var(--rose);background:#FDF0F5;
+  align-items:center;padding-bottom:0;
+}
+/* 줄 서서 대기 — 걷지 않고 서 있는다 (호흡·눈 깜박임은 유지) */
+.char--idle .leg--f,.char--idle .leg--b,
+.char--idle .arm--f,.char--idle .arm--b,
+.char--idle .shadow{animation:none !important}
+.char--idle .head,.char--idle .torso{animation:none}
+.char--idle .eye{animation:blink 5.4s infinite}
 
 .corridor{
   height:16px;margin:0 4px 14px;border-radius:8px;
@@ -574,9 +683,11 @@ button{font-family:inherit;cursor:pointer}
 .desks{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
 .desk{
   background:var(--room-2);border:2px solid var(--line);border-radius:8px;
-  padding:6px 5px 5px;text-align:center;position:relative;cursor:pointer;
+  padding:17px 5px 6px;text-align:center;position:relative;cursor:pointer;
   transition:background .2s,border-color .2s;
+  display:flex;flex-direction:column;align-items:center;
 }
+.desk .char{margin-bottom:2px}
 .desk:hover{border-color:var(--rose)}
 .desk.sel{border-color:var(--rose);background:#FDF0F5}
 .desk .nm{font-size:10px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

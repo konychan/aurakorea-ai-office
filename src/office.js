@@ -2,6 +2,7 @@ import { TEAMS } from '../data/teams.js';
 import { STAFF, RANKS, LEADER_OF } from '../data/staff.js';
 import { CEO, HQ_MANAGER, CEO_ROOM, CEO_QUEUE, ENTRANCE, WORK_HOURS, SIM_WINDOW,
          COMPANY, MEETING_ROOM, LOUNGE } from '../data/layout.js';
+import { character, vipCharacter } from './character.js';
 
 /* ===================== 공용 유틸 (시계 표기) ===================== */
 export const $ = id => document.getElementById(id);
@@ -29,13 +30,25 @@ function relPos(el){
 function spawnWalker(s){
   const w = document.createElement('div');
   w.className = 'walker';
-  w.innerHTML = avatar(s);
+  w.innerHTML = character(s, { pose:'walk' });   // 걷는 전신 캐릭터
   $('walkers').appendChild(w);
   return w;
 }
 
+/* 경로를 따라 걷는다. 구간마다 진행 방향을 보고 캐릭터를 좌우로 뒤집어
+   실제로 가는 쪽을 바라보게 한다 (헌장 11항: 몸 돌리기). */
 function walkPath(w, points, msPerLeg=550){
   return new Promise(resolve=>{
+    // 각 구간이 시작될 때 방향을 갱신한다
+    const faceFor = i => {
+      const dx = points[i+1].x - points[i].x;
+      if(Math.abs(dx) < 2) return;              // 세로 이동은 방향 유지
+      w.classList.toggle('flip', dx < 0);        // 왼쪽으로 가면 반전
+    };
+    faceFor(0);
+    for(let i=1;i<points.length-1;i++){
+      setTimeout(()=>faceFor(i), msPerLeg*i);
+    }
     const anim = w.animate(
       points.map(p=>({ left:p.x+'px', top:p.y+'px' })),
       { duration: msPerLeg*(points.length-1), easing:'ease-in-out', fill:'forwards' }
@@ -60,9 +73,10 @@ function releaseSlot(name){
 function slotEl(i){ return document.querySelector(`.qslot[data-slot="${i+1}"]`); }
 function occupySlotView(i, s){
   const el = slotEl(i); if(!el) return;
-  el.innerHTML = avatar(s);
+  // 줄 서서 대기하는 모습 — 서 있되 걷지는 않는다 (char--idle)
+  el.innerHTML = character(s, { pose:'walk', className:'char--idle' });
   el.classList.add('occ');
-  el.title = s.n;
+  el.title = `${s.n} · 보고 대기`;
 }
 function freeSlotView(i){
   const el = slotEl(i); if(!el) return;
@@ -102,6 +116,12 @@ export function leaveWalk(name, simMin){ return withWalkLock(name, ()=>_leaveWal
 export function goReport(name, simMin){ return withWalkLock(name, ()=>_goReport(name, simMin)); }
 export function returnFromReport(name, simMin){ return withWalkLock(name, ()=>_returnFromReport(name, simMin)); }
 
+/* 여러 명이 동시에 이동할 때 서로 겹치지 않게 하는 장치 (헌장 11항)
+   - 출근 순서를 조금씩 어긋나게 한다
+   - 통로에서 각자 다른 레인을 쓴다 */
+const staffIndex = name => STAFF.findIndex(x => x.n === name);
+const laneOffset = name => ((staffIndex(name) % 5) - 2) * 16;
+
 async function _arriveWalk(name, simMin){
   const s = STAFF.find(x=>x.n===name);
   const deskEl = document.querySelector(`.desk[data-n="${name}"]`);
@@ -109,13 +129,16 @@ async function _arriveWalk(name, simMin){
   if(!deskEl || !entranceEl) return;
   state[name].away = true;
   paint(simMin);
+  // 한 명씩 차례로 들어온다 — 문 앞에서 뭉치지 않는다
+  await new Promise(r=>setTimeout(r, staffIndex(name) * 220));
   // 정문을 열고 들어온다 — 캐릭터가 갑자기 생기지 않는다
   openFrontDoor();
   await new Promise(r=>setTimeout(r, 320));
   const w = spawnWalker(s);
   const from = relPos(entranceEl), to = relPos(deskEl);
-  // 정문 → 통로(세로) → 자기 자리(가로) 순으로 걷는다
-  await walkPath(w, [from, {x:from.x,y:to.y}, to]);
+  const lane = laneOffset(name);
+  // 정문 → 통로(세로, 개인별 레인) → 자기 자리(가로) 순으로 걷는다
+  await walkPath(w, [from, {x:from.x+lane,y:to.y}, to]);
   closeFrontDoor();
   w.remove();
   state[name].away = false;
@@ -129,11 +152,14 @@ async function _leaveWalk(name, simMin){
   if(!deskEl || !entranceEl) return;
   state[name].away = true;
   paint(simMin);
+  // 퇴근도 한 명씩 차례로 — 정문 앞에서 뭉치지 않는다
+  await new Promise(r=>setTimeout(r, staffIndex(name) * 200));
   const w = spawnWalker(s);
   const from = relPos(deskEl), to = relPos(entranceEl);
-  // 자리 → 통로 → 정문. 문 앞에 도착할 즈음 문이 열린다
-  const walk = walkPath(w, [from, {x:from.x,y:to.y}, to]);
-  setTimeout(openFrontDoor, 700);
+  const lane = laneOffset(name);
+  // 자리 → 통로(개인별 레인) → 정문. 문 앞에 도착할 즈음 문이 열린다
+  const walk = walkPath(w, [from, {x:from.x+lane,y:to.y}, {x:to.x+lane,y:to.y}, to]);
+  setTimeout(openFrontDoor, 900);
   await walk;
   w.remove();
   closeFrontDoor();
@@ -278,35 +304,31 @@ function renderAgenda(){
 }
 
 /* ===================== 직원 아바타 ===================== */
+// 자리에 앉은 모습 (C 국면: 전신 캐릭터)
 function avatar(s){
-  return `<svg class="av" width="26" height="26" viewBox="0 0 26 26">
-    <ellipse cx="13" cy="21" rx="9" ry="4.5" fill="${s.top}"/>
-    <circle cx="13" cy="12" r="6.5" fill="#F2D3B8"/>
-    <path d="M6.5 11.5a6.5 6.5 0 0 1 13 0z" fill="${s.hair}"/>
-    <circle cx="4.5" cy="19" r="2" fill="#F2D3B8"/>
-    <circle cx="21.5" cy="19" r="2" fill="#F2D3B8"/>
-  </svg>`;
+  return character(s, { pose:'sit' });
 }
 
-/* ===================== 대표 전용 씬 (책상 + 의자 + 대표) ===================== */
+/* ===================== 대표 전용 씬 (의자 + 대표 캐릭터 + 책상) =====================
+   헌장 10항에 맞춰 대표도 전신 캐릭터 규격을 쓴다. 책상을 캐릭터 앞에 겹쳐 그려
+   "책상 앞에 앉아 있는" 구도를 만든다. */
 function ceoScene(){
-  return `<svg width="150" height="104" viewBox="0 0 150 104">
-    <ellipse cx="75" cy="96" rx="58" ry="6" fill="rgba(0,0,0,.25)"/>
-    <path d="M40 34 q35 -22 70 0 l0 30 q-35 16 -70 0 z" fill="${CEO.chair}" opacity=".9"/>
-    <rect x="30" y="60" width="90" height="30" rx="4" fill="${CEO.desk}"/>
-    <rect x="30" y="60" width="90" height="6" rx="3" fill="#E7C066"/>
-    <rect x="40" y="72" width="18" height="12" rx="1" fill="#3E2E20"/>
-    <rect x="64" y="72" width="18" height="12" rx="1" fill="#3E2E20"/>
-    <rect x="88" y="70" width="24" height="16" rx="2" fill="#1E1A22"/>
-    <rect x="90" y="72" width="20" height="11" rx="1" fill="#6BE3E0" opacity=".55"/>
-    <ellipse cx="75" cy="68" rx="20" ry="9" fill="${CEO.suit}"/>
-    <circle cx="63" cy="51" r="2" fill="#F2D3B8"/>
-    <circle cx="87" cy="51" r="2" fill="#F2D3B8"/>
-    <circle cx="75" cy="45" r="11" fill="#F2D3B8"/>
-    <path d="M64 43a11 11 0 0 1 22 0c0 2 -1 3 -3 3h-16c-2 0-3 -1-3 -3z" fill="${CEO.hair}"/>
-    <rect x="70" y="56" width="10" height="9" fill="#fff"/>
-    <path d="M73 56 L75 63 L77 56 Z" fill="#B22234"/>
-  </svg>`;
+  return `<div class="vipScene vipScene--ceo">
+    <div class="vipChair" style="--chair:${CEO.chair}"></div>
+    <div class="vipPerson">${vipCharacter(CEO)}</div>
+    <div class="vipDesk" style="--desk:${CEO.desk}">
+      <svg viewBox="0 0 120 40" width="150" height="50">
+        <rect x="4" y="8" width="112" height="26" rx="3" fill="var(--desk)"/>
+        <rect x="4" y="8" width="112" height="6" rx="3" fill="#E7C066"/>
+        <rect x="14" y="19" width="20" height="13" rx="1" fill="#3E2E20"/>
+        <rect x="40" y="19" width="20" height="13" rx="1" fill="#3E2E20"/>
+        <rect x="70" y="16" width="26" height="17" rx="2" fill="#1E1A22"/>
+        <rect x="72" y="18" width="22" height="12" rx="1" fill="#6BE3E0" opacity=".55"/>
+        <rect x="8" y="34" width="6" height="6" fill="#4A3524"/>
+        <rect x="106" y="34" width="6" height="6" fill="#4A3524"/>
+      </svg>
+    </div>
+  </div>`;
 }
 
 function ceoWindowSkyline(){
@@ -336,22 +358,21 @@ function ceoPlant(){
 
 /* ===================== 본부장 전용 씬 (작은 집무실) ===================== */
 function hqScene(){
-  return `<svg width="110" height="84" viewBox="0 0 110 84">
-    <ellipse cx="55" cy="78" rx="40" ry="5" fill="rgba(0,0,0,.22)"/>
-    <path d="M32 28 q23 -16 46 0 l0 22 q-23 12 -46 0 z" fill="${HQ_MANAGER.chair}" opacity=".9"/>
-    <rect x="22" y="48" width="66" height="24" rx="3" fill="${HQ_MANAGER.desk}"/>
-    <rect x="22" y="48" width="66" height="5" rx="2" fill="#9C8AAE"/>
-    <rect x="30" y="57" width="14" height="10" rx="1" fill="#33281F"/>
-    <rect x="62" y="56" width="20" height="13" rx="2" fill="#1E1A22"/>
-    <rect x="64" y="58" width="16" height="9" rx="1" fill="#6BE3E0" opacity=".55"/>
-    <ellipse cx="55" cy="55" rx="16" ry="7" fill="${HQ_MANAGER.suit}"/>
-    <circle cx="45" cy="42" r="1.8" fill="#F2D3B8"/>
-    <circle cx="65" cy="42" r="1.8" fill="#F2D3B8"/>
-    <circle cx="55" cy="37" r="9" fill="#F2D3B8"/>
-    <path d="M46 35a9 9 0 0 1 18 0c0 1.6 -.8 2.4 -2.4 2.4h-13.2c-1.6 0-2.4 -.8-2.4 -2.4z" fill="${HQ_MANAGER.hair}"/>
-    <rect x="51" y="46" width="8" height="7" fill="#fff"/>
-    <path d="M53.5 46 L55 51.5 L56.5 46 Z" fill="${HQ_MANAGER.tie}"/>
-  </svg>`;
+  return `<div class="vipScene vipScene--hq">
+    <div class="vipChair" style="--chair:${HQ_MANAGER.chair}"></div>
+    <div class="vipPerson">${vipCharacter(HQ_MANAGER)}</div>
+    <div class="vipDesk" style="--desk:${HQ_MANAGER.desk}">
+      <svg viewBox="0 0 100 34" width="112" height="38">
+        <rect x="3" y="6" width="94" height="22" rx="3" fill="var(--desk)"/>
+        <rect x="3" y="6" width="94" height="5" rx="2" fill="#9C8AAE"/>
+        <rect x="12" y="15" width="16" height="11" rx="1" fill="#33281F"/>
+        <rect x="58" y="13" width="22" height="14" rx="2" fill="#1E1A22"/>
+        <rect x="60" y="15" width="18" height="10" rx="1" fill="#6BE3E0" opacity=".55"/>
+        <rect x="6" y="28" width="5" height="6" fill="#33281F"/>
+        <rect x="89" y="28" width="5" height="6" fill="#33281F"/>
+      </svg>
+    </div>
+  </div>`;
 }
 
 /* ===================== 공용 공간 렌더링 (B 국면) ===================== */
@@ -593,14 +614,34 @@ export function paint(simMin){
   STAFF.forEach(s=>{
     const d = document.querySelector(`.desk[data-n="${s.n}"]`);
     if(!d) return;
-    d.dataset.st = state[s.n].st;
+    const st = state[s.n];
+    d.dataset.st = st.st;
     d.classList.toggle('sel', selected===s.n);
-    d.classList.toggle('away', !!state[s.n].away);
+    d.classList.toggle('away', !!st.away);
+
+    // 머리 위 상태 표시 (헌장 10항)
+    let tag = d.querySelector('.statusTag');
+    const label = st.away ? '이동 중' : st.st;
+    if(label && label !== '미출근' && label !== '퇴근'){
+      if(!tag){
+        tag = document.createElement('div');
+        tag.className = 'statusTag';
+        d.appendChild(tag);
+      }
+      tag.textContent = label;
+      tag.className = 'statusTag ' + (
+        st.away ? 'move' :
+        st.st === '처리중' ? 'busy' :
+        st.st === '보고대기' ? 'wait' : 'work');
+    } else if(tag){
+      tag.remove();
+    }
+
     const old = d.querySelector('.bubble');
     if(old) old.remove();
-    if(state[s.n].bubble){
+    if(st.bubble){
       const b=document.createElement('div');
-      b.className='bubble'; b.textContent=state[s.n].bubble;
+      b.className='bubble'; b.textContent=st.bubble;
       d.appendChild(b);
     }
   });
