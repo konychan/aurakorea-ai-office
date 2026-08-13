@@ -321,7 +321,9 @@ function updateChips(){
 }
 
 /* ===================== 화면 갱신 ===================== */
+let lastSimMin = 0;
 export function paint(simMin){
+  lastSimMin = simMin;
   $('simClock').textContent = hhmm(simMin);
   STAFF.forEach(s=>{
     const d = document.querySelector(`.desk[data-n="${s.n}"]`);
@@ -351,13 +353,15 @@ export function log(simMin, who, msg){
   while($('log').childNodes.length>90) $('log').lastChild.remove();
 }
 
-export function select(name, simMin){
+export function select(name, simMin = lastSimMin){
   selected = name;
   const s = STAFF.find(x=>x.n===name), st = state[name];
   const realBlock = st.lastReal ? `
     <div class="realResult">
-      <b>실시간 리서치 결과 <span>${hhmm(st.lastReal.at)}</span></b>
+      <b>실시간 리서치 결과 <span>${new Date(st.lastReal.at).toLocaleString('ko-KR')}</span></b>
       <div>${escapeHtml(st.lastReal.text).replace(/\n/g,'<br>')}</div>
+      ${st.lastReal.sources && st.lastReal.sources.length ? `<ul class="sources">${st.lastReal.sources.map(src=>`<li><a href="${escapeHtml(src.url)}" target="_blank" rel="noopener">${escapeHtml(src.title)}</a></li>`).join('')}</ul>` : ''}
+      ${st.lastReal.note ? `<div class="note">${escapeHtml(st.lastReal.note)}</div>` : ''}
     </div>` : '';
   $('detail').innerHTML = `
     <h4>${s.n} · ${s.r}</h4>

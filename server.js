@@ -1,6 +1,8 @@
 // 아우라코리아 AI 오피스 로컬 서버
 // - 정적 파일(index.html 등)을 서비스한다
-// - /api/agent/:name 으로 들어오는 요청은 실제 클로드 API(웹 검색 포함)를 호출해 진짜 업무를 수행한다
+// - /api/agent/:name 은 클로드 API(웹 검색 포함)를 실시간으로 호출하는 유료 경로다.
+//   지금은 프론트엔드가 이 경로 대신 data/agent-results.json(무료, Claude Code가 직접 채워둔 결과)을 읽는다.
+//   대표님이 나중에 Anthropic 크레딧을 충전하면 이 경로로 실시간 자동 검색으로 전환할 수 있다.
 // - API 키는 이 서버 안에서만 쓰이고 브라우저로는 절대 내려가지 않는다
 const http = require('http');
 const https = require('https');
