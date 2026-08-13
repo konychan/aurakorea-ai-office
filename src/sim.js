@@ -1,6 +1,7 @@
 import { STAFF, TASKS, AGENDAS } from '../data/staff.js';
 import { WORK_HOURS, SIM_WINDOW } from '../data/layout.js';
 import { $, state, paint, log, select, selected, submitAgenda, resolveAgenda, arriveWalk, leaveWalk } from './office.js';
+import { runRealAgent } from './agent.js';
 
 let simMin = SIM_WINDOW.open;
 let running = false;
@@ -46,6 +47,13 @@ function tick(){
       submitAgenda(s.n, title, simMin);
       log(simMin, s.n, `"${title}" 결재 상신. 대표님 결재를 기다립니다.`);
       if(track) focusRoom(s.t);
+    } else if(s.real){
+      // 1호 실제 에이전트: 가짜 업무 목록 대신, 쿨다운이 지나면 실제 웹 검색을 수행한다
+      if(!st.runningReal && simMin >= (st.nextRealAt||0) && Math.random() < 0.15*speed){
+        st.nextRealAt = simMin + 60; // 사내 시각 기준 1시간에 한 번꼴로 제한 (실제 API 비용 발생)
+        runRealAgent(s.n, simMin);
+        if(track) focusRoom(s.t);
+      }
     } else if(Math.random() < 0.13*speed){
       const task = TASKS[s.t][Math.floor(Math.random()*TASKS[s.t].length)];
       st.st='처리중'; st.done++; st.bubble=task; st.bt=simMin;

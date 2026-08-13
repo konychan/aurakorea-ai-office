@@ -10,7 +10,11 @@ export const toMin = t => (+t.slice(0,2))*60 + (+t.slice(3));
 
 /* ===================== 런타임 상태 ===================== */
 export const state = {};
-STAFF.forEach(s=>{ state[s.n] = { st:'미출근', done:0, bubble:null, bt:0, away:false }; });
+STAFF.forEach(s=>{ state[s.n] = { st:'미출근', done:0, bubble:null, bt:0, away:false, runningReal:false, lastReal:null }; });
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
 export let selected = null;
 
@@ -350,6 +354,11 @@ export function log(simMin, who, msg){
 export function select(name, simMin){
   selected = name;
   const s = STAFF.find(x=>x.n===name), st = state[name];
+  const realBlock = st.lastReal ? `
+    <div class="realResult">
+      <b>실시간 리서치 결과 <span>${hhmm(st.lastReal.at)}</span></b>
+      <div>${escapeHtml(st.lastReal.text).replace(/\n/g,'<br>')}</div>
+    </div>` : '';
   $('detail').innerHTML = `
     <h4>${s.n} · ${s.r}</h4>
     <div class="kv"><span>소속</span><span>${TEAMS.find(t=>t.id===s.t).name}</span></div>
@@ -357,7 +366,8 @@ export function select(name, simMin){
     <div class="kv"><span>현재 상태</span><span>${st.st}</span></div>
     <div class="kv"><span>오늘 처리</span><span>${st.done}건</span></div>
     <div class="duty">${s.duty}</div>
-    <button class="go" id="goBtn">이 직원에게 직접 지시</button>`;
+    <button class="go" id="goBtn">이 직원에게 직접 지시</button>
+    ${realBlock}`;
   $('goBtn').onclick = ()=>{ $('cmd').focus(); $('cmd').placeholder = `${s.n}에게 지시…`; };
   paint(simMin);
 }

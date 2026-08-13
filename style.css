@@ -323,3 +323,11 @@ button{font-family:inherit;cursor:pointer}
 .agenda__btns button{flex:1;border:0;border-radius:6px;padding:6px;font-size:10px;color:#fff}
 .agenda__btns .ok{background:var(--mint)}
 .agenda__btns .no{background:var(--rose)}
+
+.realResult{
+  margin-top:10px;padding:8px;border-radius:8px;
+  background:#EAF7F2;border:1px solid #B7E4CF;
+}
+.realResult b{display:flex;justify-content:space-between;font-size:10px;color:var(--mint);margin-bottom:5px}
+.realResult b span{color:var(--ink-2);font-weight:normal}
+.realResult div{font-size:10px;line-height:1.6;color:var(--ink)}
