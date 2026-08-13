@@ -15,7 +15,7 @@ export const toMin = t => (+t.slice(0,2))*60 + (+t.slice(3));
 export const state = {};
 STAFF.forEach(s=>{ state[s.n] = { st:'미출근', done:0, bubble:null, bt:0, away:false, runningReal:false, lastReal:null }; });
 
-function escapeHtml(str){
+export function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
@@ -208,6 +208,68 @@ async function _returnFromReport(name, simMin){
   paint(simMin);
 }
 
+/* ═══════════ 본부장 이동 (E 국면 · 헌장 12항) ═══════════
+   본부장은 평상시 본부장실 의자에 앉아 대기하다가, 지시가 오면 일어나
+   담당 팀장 자리까지 직접 걸어가 지시를 전달하고 본부장실로 복귀한다. */
+export const hqState = { busy:false, at:'본부장실' };
+
+function spawnHqWalker(){
+  const w = document.createElement('div');
+  w.className = 'walker walker--hq';
+  w.innerHTML = vipCharacter(HQ_MANAGER, 'walk');
+  $('walkers').appendChild(w);
+  return w;
+}
+
+function setHqPresent(present){
+  const room = $('hqRoom');
+  if(room) room.classList.toggle('vacant', !present);
+}
+
+/* 본부장이 대상 자리로 걸어가 지시를 전달하고 돌아온다.
+   onArrive: 도착했을 때 실행할 동작 (지시 전달 연출 등) */
+export async function hqVisit(targetName, { onArrive, stayMs = 1400 } = {}){
+  const targetEl = document.querySelector(`.desk[data-n="${targetName}"]`);
+  const hqEl = $('hqRoom');
+  if(!targetEl || !hqEl || hqState.busy) return false;
+
+  hqState.busy = true;
+  hqState.at = '이동 중';
+  setHqPresent(false);
+
+  const w = spawnHqWalker();
+  const from = relPos(hqEl);
+  const to = relPos(targetEl);
+  const corridorY = relPos($('corridor')).y;
+
+  // 본부장실 → 복도 → 담당자 자리 앞
+  await walkPath(w, [from, {x:from.x,y:corridorY}, {x:to.x,y:corridorY}, {x:to.x, y:to.y - 6}]);
+
+  // 담당자가 하던 일을 멈추고 본부장을 바라본다
+  targetEl.classList.add('attending');
+  hqState.at = targetName;
+  if(onArrive) await onArrive(w);
+  await new Promise(r=>setTimeout(r, stayMs));
+  targetEl.classList.remove('attending');
+
+  // 본부장실로 복귀
+  await walkPath(w, [{x:to.x, y:to.y - 6}, {x:to.x,y:corridorY}, {x:from.x,y:corridorY}, from]);
+  w.remove();
+  hqState.busy = false;
+  hqState.at = '본부장실';
+  setHqPresent(true);
+  return true;
+}
+
+/* 본부장 머리 위 말풍선 (지시 전달 연출) */
+export function hqSay(walkerEl, text){
+  const b = document.createElement('div');
+  b.className = 'bubble bubble--hq';
+  b.textContent = text;
+  walkerEl.appendChild(b);
+  return () => b.remove();
+}
+
 /* ===================== 직원 간 소통 (5단계) =====================
    무한 루프 방지 3중 장치:
    1) "질문 → 미리 정한 답변" 1회로 끝나는 단방향 대화만 존재한다. 답변이 새 질문을 만들지 않으므로
@@ -382,8 +444,9 @@ function hqScene(){
 function meetingRoomHTML(){
   const leaders = STAFF.filter(s=>s.rank==='팀장');
   const half = Math.ceil(leaders.length/2);
+  // 클래스명 앞에 m(meeting)을 붙여 직원 자리(.seat)와 이름이 겹치지 않게 한다
   const seatChip = (name, role, cls) =>
-    `<div class="seat ${cls}" data-seat="${name}"><span class="seat__plate">${name}</span><span class="seat__role">${role}</span></div>`;
+    `<div class="mseat ${cls}" data-seat="${name}"><span class="mseat__plate">${name}</span><span class="mseat__role">${role}</span></div>`;
 
   return `<div class="room2 meetingRoom" id="meetingRoom">
     <div class="room2__label">
@@ -547,9 +610,12 @@ export function buildFloor(){
           ${hqScene()}
           <div class="hqRoom__nameplate">${HQ_MANAGER.name} · ${HQ_MANAGER.title}</div>
         </div>
-        <div class="hqRoom__chain">
-          <b>보고 경로</b>
-          <span>팀원</span><i>→</i><span>팀장</span><i>→</i><span class="me">본부장</span><i>→</i><span class="ceo">대표</span>
+        <div class="hqRoom__info">
+          <div class="hqRoom__chain">
+            <b>보고 경로</b>
+            <span>팀원</span><i>→</i><span>팀장</span><i>→</i><span class="me">본부장</span><i>→</i><span class="ceo">대표</span>
+          </div>
+          <div class="hqRoom__status">현재 <b id="hqStatus">대표님 지시 대기</b></div>
         </div>
       </div>
     </div>

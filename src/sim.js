@@ -2,6 +2,7 @@ import { STAFF, TASKS, AGENDAS, CHATS } from '../data/staff.js';
 import { WORK_HOURS, SIM_WINDOW } from '../data/layout.js';
 import { $, state, paint, log, select, selected, submitAgenda, resolveAgenda, arriveWalk, leaveWalk, chatWith } from './office.js';
 import { runRealAgent } from './agent.js';
+import { submitForReview } from './orchestrator.js';
 
 const CHAT_BY_SENDER = {};
 CHATS.forEach(c => { (CHAT_BY_SENDER[c.from] ||= []).push(c); });
@@ -70,6 +71,17 @@ function tick(){
       log(simMin, s.n, task+' 완료.');
       setTimeout(()=>{ if(state[s.n].st==='처리중') state[s.n].st='근무중'; paint(simMin); }, 1600);
       if(track) focusRoom(s.t);
+
+      // 완료한 업무 중 일부는 팀장 검증 → 본부장 검토를 거쳐 대표 보고 대기열에 오른다 (헌장 14항)
+      if(Math.random() < 0.25){
+        submitForReview({
+          name: s.n,
+          title: task,
+          result: `${task} 처리를 마쳤습니다. 담당 범위 내 이슈는 없었습니다.`,
+          tests: '내부 대조 확인 완료',
+          uncertain: '',
+        }, simMin);
+      }
     }
   });
   paint(simMin);

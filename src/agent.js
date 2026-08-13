@@ -1,5 +1,6 @@
 import { STAFF } from '../data/staff.js';
 import { state, paint, log } from './office.js';
+import { submitForReview } from './orchestrator.js';
 
 // 1호 실제 에이전트 실행: data/agent-results.json 에 저장된 실제 웹 검색 결과를 확인해 보고한다.
 // (이 파일은 Claude Code가 대표님 기존 플랜으로 직접 검색해 채워둔다 — 별도 API 결제가 필요 없다)
@@ -34,4 +35,16 @@ export async function runRealAgent(name, simMin){
   st.bt = simMin;
   log(simMin, name, '실시간 브랜드 후보 조사 확인 완료. 자리를 클릭하면 결과를 볼 수 있습니다.');
   paint(simMin);
+
+  // 실제 리서치 결과도 팀장 검증 → 본부장 검토를 거쳐 대표 보고 대기열에 오른다 (헌장 14항)
+  submitForReview({
+    name,
+    title: '실시간 K뷰티 브랜드 리서치',
+    result: item.text,
+    sources: item.sources || [],
+    files: ['data/agent-results.json'],
+    tests: '실제 웹 검색 결과에 근거 (출처 첨부)',
+    uncertain: '시장 수치는 기사 시점 기준',
+    needsDecision: '소싱 후보로 진행할지 대표님 판단 필요',
+  }, simMin);
 }

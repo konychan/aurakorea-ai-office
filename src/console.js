@@ -1,5 +1,6 @@
 import { STAFF, LEADER_OF } from '../data/staff.js';
-import { $, state, paint, log, select, selected, goReport, returnFromReport } from './office.js';
+import { $, state, paint, log, select, selected } from './office.js';
+import { hqDispatch, submitForReview } from './orchestrator.js';
 import { HQ_MANAGER } from '../data/layout.js';
 import { getSimMin } from './sim.js';
 
@@ -33,24 +34,22 @@ function route(text){
   return LEADER_OF['ar']; // 담당이 불분명하면 아르헨티나 지역 팀장이 1차로 받는다
 }
 
-/* ===================== 대표 지시 → AI 직원 호출 (기존 로직 유지) ===================== */
+/* ═══════════ 대표 지시 → 본부장 오케스트레이션 → 담당자 수행 ═══════════
+   헌장 12항: 본부장이 자리에서 일어나 담당 팀장에게 직접 걸어가 지시를 전달한다.
+   헌장 14항: 결과는 대표님께 바로 가지 않고 팀장 검증 → 본부장 검토 → 보고 대기열을 거친다. */
 async function dispatch(text){
   if(!text.trim()) return;
   const name = route(text);
   const s = STAFF.find(x=>x.n===name);
   const st = state[name];
   const simMin = getSimMin();
-  st.st='보고대기'; st.bubble='대표님 지시 처리 중…'; st.bt=simMin;
-  paint(simMin);
-  // 지시 전달 경로를 로그에 남긴다: 대표 → 본부장 → (팀장) → 담당자
-  const leader = LEADER_OF[s.t];
-  log(simMin, '대표', `"${text}" 지시.`);
-  if(leader && leader !== name){
-    log(simMin, `${HQ_MANAGER.name} 본부장`, `${leader} 팀장에게 전달 → ${name} 배정.`);
-  } else {
-    log(simMin, `${HQ_MANAGER.name} 본부장`, `${name} 팀장에게 직접 배정.`);
-  }
-  goReport(name, simMin);
+
+  // 1) 본부장이 지시를 받아 담당 팀장에게 직접 걸어가 전달한다
+  await hqDispatch(text, name, simMin);
+
+  // 2) 담당자가 업무를 수행한다
+  st.st='처리중'; st.bubble='지시 업무 처리 중…'; st.bt=getSimMin();
+  paint(getSimMin());
   $('out').innerHTML = `<span class="who">${name} · ${s.r}</span>\n작성 중…`;
 
   try{
@@ -65,23 +64,21 @@ async function dispatch(text){
     const data = await res.json();
     const reply = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n") || "(응답 없음)";
     $('out').innerHTML = `<span class="who">${name} · ${s.r}</span>\n${reply}`;
-    st.done++; st.bubble='보고 완료';
-    // 보고 경로: 담당자 → 팀장 검증 → 본부장 → 대표
-    if(leader && leader !== name){
-      log(getSimMin(), name, `${leader} 팀장에게 결과 제출.`);
-      log(getSimMin(), `${leader} 팀장`, `검증 완료. ${HQ_MANAGER.name} 본부장에게 보고.`);
-    } else {
-      log(getSimMin(), `${name} 팀장`, `${HQ_MANAGER.name} 본부장에게 보고.`);
-    }
-    log(getSimMin(), `${HQ_MANAGER.name} 본부장`, '검토 완료. 대표님께 보고드립니다.');
+    st.bubble='결과 제출';
+    // 3) 팀장 검증 → 본부장 검토 → 대표 보고 대기열 등록 (헌장 14항)
+    submitForReview({
+      name, title: text, result: reply,
+      tests: '외부 검증 없음 (AI 응답)',
+      uncertain: '수치는 확인 필요',
+    }, getSimMin());
   }catch(e){
     $('out').innerHTML = `<span class="err">호출 실패 — 이 사무실은 클로드 앱 안에서 열어야 직원이 응답합니다.\n파일을 브라우저에서 직접 열면 UI만 동작합니다.</span>`;
     st.bubble='연결 실패';
+    log(getSimMin(), `${HQ_MANAGER.name} 본부장`, `${name}의 결과가 나오지 않았습니다. 대표님 보고를 보류합니다.`);
   }
   const now = getSimMin();
   st.st='근무중'; st.bt=now;
   paint(now); if(selected) select(selected, now);
-  returnFromReport(name, now);
 }
 
 export function initConsole(){
