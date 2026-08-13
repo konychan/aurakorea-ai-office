@@ -1,0 +1,536 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AURAKOREA AI OFFICE</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Galmuri11.css">
+<style>
+  :root{
+    --floor:#E4D2E9;
+    --floor-2:#EFE1F2;
+    --room:#FCF9FD;
+    --room-2:#F5EDF8;
+    --line:#D3BEDA;
+    --ink:#3B2E47;
+    --ink-2:#7A6A88;
+    --mint:#2FBF8B;
+    --amber:#E9B93F;
+    --rose:#E56A92;
+    --slate:#B7A8C2;
+    --console:#221B2D;
+    --console-2:#2E2540;
+    --neon:#FF8FD0;
+    --cyan:#6BE3E0;
+    --pixel:'Galmuri11', ui-monospace, 'Apple SD Gothic Neo', 'Malgun Gothic', monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--floor);
+    color:var(--ink);
+    font-family:var(--pixel);
+    font-size:13px;
+    -webkit-font-smoothing:none;
+  }
+  button{font-family:inherit;cursor:pointer}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:10px 16px;background:var(--room);
+    border-bottom:2px solid var(--line);
+  }
+  .brand{font-size:15px;letter-spacing:.5px}
+  .brand b{color:var(--rose)}
+  .tag{
+    font-size:11px;color:var(--ink-2);border:1px solid var(--line);
+    border-radius:999px;padding:3px 9px;background:var(--room-2);
+  }
+  .clock{
+    margin-left:auto;display:flex;align-items:center;gap:10px;
+    background:var(--console);color:#fff;border-radius:8px;padding:6px 12px;
+  }
+  .clock .label{font-size:10px;color:var(--slate)}
+  .clock .t{font-size:20px;letter-spacing:1px}
+  .clock .sim{font-size:10px;color:var(--cyan)}
+
+  /* ---------- control bar ---------- */
+  .controls{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    padding:9px 16px;background:var(--floor-2);
+    border-bottom:2px solid var(--line);
+  }
+  .btn{
+    border:2px solid var(--line);background:var(--room);color:var(--ink);
+    border-radius:8px;padding:6px 11px;font-size:12px;
+  }
+  .btn:hover{background:var(--room-2)}
+  .btn.on{background:#F6E9A8;border-color:#D9C36A}
+  .btn.mint{background:#DFF5EC;border-color:#8FD9BE}
+  .seg{display:flex;border:2px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;background:var(--room);padding:6px 13px;font-size:12px;border-right:1px solid var(--line)}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:#F6E9A8}
+  .spacer{flex:1}
+  .legend{display:flex;gap:12px;font-size:11px;color:var(--ink-2)}
+  .legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
+
+  /* ---------- layout ---------- */
+  .stage{display:grid;grid-template-columns:1fr 340px;gap:14px;padding:14px 16px 22px}
+  @media(max-width:940px){.stage{grid-template-columns:1fr}}
+
+  /* ---------- office floor ---------- */
+  .floor{
+    background:
+      repeating-linear-gradient(0deg,transparent 0 39px,rgba(0,0,0,.035) 39px 40px),
+      repeating-linear-gradient(90deg,transparent 0 39px,rgba(0,0,0,.035) 39px 40px),
+      var(--floor-2);
+    border:3px solid var(--line);border-radius:12px;padding:14px;
+    display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-content:start;
+  }
+  @media(max-width:1280px){.floor{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:640px){.floor{grid-template-columns:1fr}}
+
+  .room{
+    background:var(--room);border:2px solid var(--line);border-radius:10px;
+    padding:9px 10px 11px;position:relative;transition:box-shadow .25s,transform .25s;
+  }
+  .room.track{box-shadow:0 0 0 3px var(--neon),0 6px 18px rgba(255,143,208,.35);transform:translateY(-2px)}
+  .room h3{margin:0 0 2px;font-size:12px;display:flex;align-items:center;gap:6px}
+  .room .sub{font-size:10px;color:var(--ink-2);margin-bottom:8px}
+  .room .dot{width:8px;height:8px;border-radius:50%;background:var(--slate);box-shadow:0 0 0 2px var(--room)}
+  .room.active .dot{background:var(--mint);animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .desks{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+  .desk{
+    background:var(--room-2);border:2px solid var(--line);border-radius:8px;
+    padding:6px 5px 5px;text-align:center;position:relative;cursor:pointer;
+    transition:background .2s,border-color .2s;
+  }
+  .desk:hover{border-color:var(--rose)}
+  .desk.sel{border-color:var(--rose);background:#FDF0F5}
+  .desk .nm{font-size:10px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .desk .rl{font-size:9px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .desk .led{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--slate)}
+  .desk[data-st="근무중"] .led{background:var(--mint)}
+  .desk[data-st="처리중"] .led{background:var(--amber);animation:pulse 1s infinite}
+  .desk[data-st="보고대기"] .led{background:var(--rose);animation:pulse .8s infinite}
+  .desk[data-st="미출근"]{opacity:.42}
+  .desk[data-st="퇴근"]{opacity:.42}
+  .av{transition:opacity .4s,transform .4s}
+  .desk[data-st="미출근"] .av,.desk[data-st="퇴근"] .av{opacity:0;transform:translateY(6px)}
+  .bubble{
+    position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);
+    background:var(--console);color:#fff;font-size:9px;line-height:1.35;
+    padding:5px 7px;border-radius:6px;width:150px;text-align:left;z-index:5;
+    box-shadow:0 4px 12px rgba(0,0,0,.25);
+  }
+  .bubble:after{content:"";position:absolute;top:100%;left:50%;margin-left:-4px;border:4px solid transparent;border-top-color:var(--console)}
+
+  /* ---------- console ---------- */
+  .side{display:flex;flex-direction:column;gap:12px}
+  .panel{background:var(--console);border-radius:12px;padding:12px;color:#EDE6F5}
+  .panel h4{margin:0 0 9px;font-size:12px;color:var(--neon);display:flex;align-items:center;gap:6px}
+  .panel h4 .win{margin-left:auto;color:var(--slate);font-size:10px}
+  .quick{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+  .quick button{
+    background:var(--console-2);border:1px solid #453A5C;color:#EDE6F5;
+    border-radius:6px;padding:5px 8px;font-size:10px;
+  }
+  .quick button:hover{border-color:var(--neon);color:var(--neon)}
+  .row{display:flex;gap:6px}
+  .row input{
+    flex:1;background:var(--console-2);border:1px solid #453A5C;color:#fff;
+    border-radius:6px;padding:8px;font-size:11px;font-family:inherit;
+  }
+  .row input:focus{outline:none;border-color:var(--neon)}
+  .row .send{background:var(--neon);border:0;color:#2B1B27;border-radius:6px;padding:0 14px;font-size:11px}
+  .out{
+    margin-top:10px;background:#1A1424;border-radius:8px;padding:9px;
+    font-size:10px;line-height:1.6;max-height:230px;overflow:auto;white-space:pre-wrap;
+  }
+  .out .who{color:var(--cyan)}
+  .out .err{color:#FF9AA0}
+
+  .logbox{background:var(--room);border:2px solid var(--line);border-radius:12px;padding:11px}
+  .logbox h4{margin:0 0 8px;font-size:12px}
+  .log{max-height:210px;overflow:auto;font-size:10px;line-height:1.7;color:var(--ink-2)}
+  .log b{color:var(--ink)}
+  .log .t{color:var(--slate);margin-right:5px}
+
+  .card{background:var(--room);border:2px solid var(--line);border-radius:12px;padding:11px}
+  .card h4{margin:0 0 6px;font-size:12px}
+  .card .kv{display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px dashed var(--line)}
+  .card .kv:last-of-type{border-bottom:0}
+  .card .kv span:first-child{color:var(--ink-2)}
+  .card .duty{font-size:10px;color:var(--ink-2);line-height:1.6;margin:7px 0 9px}
+  .card .go{width:100%;background:var(--console);color:#fff;border:0;border-radius:7px;padding:8px;font-size:11px}
+  .empty{font-size:10px;color:var(--ink-2);line-height:1.6}
+</style>
+
+<div class="topbar">
+  <div class="brand">AURAKOREA <b>AI COMPANY</b></div>
+  <div class="tag" id="staffCount">AI STAFF 0</div>
+  <div class="tag">K-BEAUTY EXPORT · REAL-TIME</div>
+  <div class="clock">
+    <div>
+      <div class="label">SEOUL 실시간</div>
+      <div class="t" id="realClock">--:--</div>
+    </div>
+    <div>
+      <div class="label">사내 근무시각</div>
+      <div class="t sim" id="simClock" style="font-size:16px">07:00</div>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn mint" id="startBtn">하루 시작</button>
+  <button class="btn" id="pauseBtn">일시정지</button>
+  <div class="seg" id="speedSeg">
+    <button data-sp="1" class="on">1x</button>
+    <button data-sp="2">2x</button>
+    <button data-sp="4">4x</button>
+    <button data-sp="12">퇴근까지</button>
+  </div>
+  <button class="btn on" id="trackBtn">자동 추적 ON</button>
+  <div class="spacer"></div>
+  <div class="legend">
+    <span><i style="background:var(--mint)"></i>근무중</span>
+    <span><i style="background:var(--amber)"></i>처리중</span>
+    <span><i style="background:var(--rose)"></i>보고대기</span>
+    <span><i style="background:var(--slate)"></i>미출근</span>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="floor" id="floor"></div>
+
+  <div class="side">
+    <div class="panel">
+      <h4>ceo.console — 대표 지시창 <span class="win">● ● ●</span></h4>
+      <div class="quick">
+        <button data-q="오늘 아르헨티나 건 진행상황 보고">일일 보고</button>
+        <button data-q="이번 선적 수출서류 누락 없는지 검토">서류 검토</button>
+        <button data-q="신규 K뷰티 브랜드 소싱 후보 정리">브랜드 소싱</button>
+        <button data-q="환율 변동 반영해서 마진 다시 계산">마진 재계산</button>
+        <button data-q="스페인 CPNP 등록 준비사항 정리">CPNP 등록</button>
+        <button data-q="컨테이너 적입 스케줄 확인">선적 스케줄</button>
+      </div>
+      <div class="row">
+        <input id="cmd" placeholder="지시를 입력하세요 (예: 화성 창고 재고 확인)">
+        <button class="send" id="sendBtn">지시</button>
+      </div>
+      <div class="out" id="out">대표님 지시를 기다리는 중입니다.
+담당 직원이 자동으로 배정됩니다.</div>
+    </div>
+
+    <div class="card" id="detail">
+      <h4>직원 상세</h4>
+      <div class="empty">자리를 클릭하면 담당 업무와 출근시간이 표시됩니다.</div>
+    </div>
+
+    <div class="logbox">
+      <h4>업무 로그</h4>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===================== 조직 정의 ===================== */
+const TEAMS = [
+  { id:'sales', name:'해외영업본부', sub:'아르헨티나 · 스페인 · GCC' },
+  { id:'source', name:'브랜드소싱팀', sub:'K뷰티 브랜드 발굴 · 심사' },
+  { id:'docs', name:'수출서류·인증팀', sub:'CFS · GMP · ANMAT · CPNP' },
+  { id:'logi', name:'물류·통관팀', sub:'선적 · 적입 · 통관' },
+  { id:'fin', name:'재무·정산팀', sub:'환율 · 원가 · 마진' },
+  { id:'mkt', name:'마케팅·디자인팀', sub:'카탈로그 · 콘텐츠' },
+];
+
+const STAFF = [
+  { n:'한지우', t:'sales', r:'아르헨티나 데스크', in:'07:30', hair:'#4A3A2E', top:'#7FB6E8',
+    duty:'부에노스아이레스 파트너 응대, 현지 발주 취합, 통관 이슈 1차 대응',
+    p:'너는 아우라코리아 해외영업본부 아르헨티나 데스크 담당이다. 부에노스아이레스 파트너사와의 발주·통관·현지 유통을 담당한다. ANMAT 등록과 현지 수입규제를 항상 염두에 두고 답한다.' },
+  { n:'오세라', t:'sales', r:'스페인·EU 데스크', in:'08:00', hair:'#2E2A33', top:'#E89AB8',
+    duty:'스페인 바이어 발굴, EU 유통 조건 협의, 전시회 일정 관리',
+    p:'너는 아우라코리아 해외영업본부 스페인·EU 데스크 담당이다. EU 화장품 규정(CPNP, Responsible Person)을 기준으로 답한다.' },
+  { n:'문가온', t:'sales', r:'GCC 데스크', in:'08:00', hair:'#3B2A22', top:'#9FD8C4',
+    duty:'두바이·사우디 유통사 관리, 할랄 및 현지 인증 요건 확인',
+    p:'너는 아우라코리아 해외영업본부 GCC 데스크 담당이다. UAE·사우디 등 걸프 지역 화장품 등록 요건과 유통 관행을 기준으로 답한다.' },
+  { n:'배시현', t:'sales', r:'견적·단가', in:'08:30', hair:'#503A2C', top:'#F2C87A',
+    duty:'FOB/CIF 견적 산출, 바이어별 가격표 관리',
+    p:'너는 아우라코리아 견적·단가 담당이다. FOB·CIF·DDP 조건별 단가 구조를 표로 정리해 답한다. 숫자는 가정값임을 명시한다.' },
+
+  { n:'유래인', t:'source', r:'브랜드 발굴', in:'08:00', hair:'#6B4A2F', top:'#C6A9E8',
+    duty:'신규 K뷰티 브랜드 리스트업, 해외 진출 이력 조사',
+    p:'너는 아우라코리아 브랜드소싱팀 브랜드 발굴 담당이다. 신규 K뷰티 브랜드 후보를 카테고리·가격대·해외진출 현황 기준으로 정리한다.' },
+  { n:'천도윤', t:'source', r:'브랜드 심사', in:'08:30', hair:'#2B2620', top:'#8FC9E8',
+    duty:'MOQ·독점권·수출서류 구비 여부 심사, 리스크 판정',
+    p:'너는 아우라코리아 브랜드소싱팀 심사 담당이다. 브랜드를 MOQ·독점권 가능성·수출서류 구비·가격경쟁력 4개 축으로 심사하고 PASS/HOLD/FAIL로 판정한다.' },
+  { n:'서나린', t:'source', r:'계약조건', in:'09:00', hair:'#4A3520', top:'#F0A9A0',
+    duty:'유통계약 조건 정리, 독점 파트너십 협의안 작성',
+    p:'너는 아우라코리아 브랜드소싱팀 계약조건 담당이다. 독점 유통계약의 기간·최소구매·지역범위 조항을 실무 관점에서 정리한다. 법률 자문이 아님을 밝힌다.' },
+
+  { n:'강윤슬', t:'docs', r:'CFS·GMP', in:'07:30', hair:'#33282E', top:'#A8D8B0',
+    duty:'판매증명서·GMP 인증서 발급 및 유효기간 관리',
+    p:'너는 아우라코리아 수출서류·인증팀 CFS·GMP 담당이다. 서류 유효기간과 아포스티유·영사확인 여부를 항상 체크리스트로 확인한다.' },
+  { n:'노윤재', t:'docs', r:'INCI·성분', in:'08:00', hair:'#5A4432', top:'#E8C7E0',
+    duty:'전성분 INCI 정리, 수입국 금지성분 대조',
+    p:'너는 아우라코리아 성분 담당이다. INCI 표기와 수입국 금지·제한 성분 대조를 담당한다. 규정은 반드시 원문 확인이 필요하다고 덧붙인다.' },
+  { n:'임하경', t:'docs', r:'해외등록', in:'08:30', hair:'#2F2A2A', top:'#B9C6EE',
+    duty:'ANMAT·CPNP 등록 진행, 등록번호 및 갱신일 관리',
+    p:'너는 아우라코리아 해외등록 담당이다. 아르헨티나 ANMAT과 EU CPNP 등록 절차·소요기간·필요서류를 단계별로 정리한다.' },
+  { n:'백가온', t:'docs', r:'라벨·표기', in:'09:00', hair:'#6E5033', top:'#F5D98C',
+    duty:'현지어 라벨 검수, 표기사항 누락 확인',
+    p:'너는 아우라코리아 라벨 담당이다. 스페인어·아랍어 라벨의 필수 표기사항 누락을 검수한다.' },
+
+  { n:'조태민', t:'logi', r:'선적 스케줄', in:'07:30', hair:'#3A2E24', top:'#8FD0E8',
+    duty:'선사 부킹, 출항일 관리, 지연 리스크 모니터링',
+    p:'너는 아우라코리아 물류팀 선적 스케줄 담당이다. 부킹·컷오프·출항·도착 일정을 표로 정리하고 지연 리스크를 짚는다.' },
+  { n:'구민아', t:'logi', r:'컨테이너 적입', in:'08:00', hair:'#4C3A2C', top:'#C9E8A8',
+    duty:'20FT/40FT 적입 플랜, 파레트 수량 계산',
+    p:'너는 아우라코리아 물류팀 적입 담당이다. 박스 규격과 파레트 기준으로 컨테이너 적입 수량을 계산한다.' },
+  { n:'황시온', t:'logi', r:'통관·관세', in:'08:30', hair:'#282430', top:'#E8B3A0',
+    duty:'수출신고, HS코드 확인, 현지 관세율 조회',
+    p:'너는 아우라코리아 통관 담당이다. 화장품 HS코드와 수입국 관세·부가세 구조를 정리한다. 최종 확인은 관세사 필요라고 덧붙인다.' },
+
+  { n:'정하율', t:'fin', r:'환율·입금', in:'08:00', hair:'#453222', top:'#A9C4E8',
+    duty:'USD/KRW 모니터링, T/T 입금 확인, L/C 조건 검토',
+    p:'너는 아우라코리아 재무팀 환율·입금 담당이다. 환율 변동이 수출 마진에 미치는 영향을 계산해 설명한다. 투자 조언은 하지 않는다.' },
+  { n:'남우리', t:'fin', r:'원가·마진', in:'08:30', hair:'#5B4128', top:'#EEC9A0',
+    duty:'제품별 원가 구조 분석, 목표 마진 대비 실적 관리',
+    p:'너는 아우라코리아 재무팀 원가·마진 담당이다. 매입가·물류비·인증비·관세를 반영한 마진율을 단계별로 계산해 보여준다.' },
+  { n:'권이도', t:'fin', r:'정산·세무', in:'09:00', hair:'#2D2822', top:'#B8E0D4',
+    duty:'수출실적 정산, 영세율 증빙 관리',
+    p:'너는 아우라코리아 재무팀 정산 담당이다. 수출 영세율 증빙과 정산 절차를 정리한다. 세무 신고는 세무사 확인이 필요하다고 덧붙인다.' },
+
+  { n:'표이랑', t:'mkt', r:'카탈로그', in:'09:00', hair:'#4E3826', top:'#F0B8D0',
+    duty:'브랜드별 제품소개서, 스페인어 카탈로그 제작',
+    p:'너는 아우라코리아 마케팅팀 카탈로그 담당이다. 제품소개서 구성안을 섹션별로 제안한다. 스페인어 카피가 필요하면 함께 제시한다.' },
+  { n:'어름', t:'mkt', r:'콘텐츠', in:'09:00', hair:'#33302B', top:'#CFE8F0',
+    duty:'현지 SNS 콘텐츠 기획, 바이어 제안용 자료 편집',
+    p:'너는 아우라코리아 마케팅팀 콘텐츠 담당이다. 아르헨티나·스페인 현지 SNS 환경에 맞춘 콘텐츠 방향을 제안한다.' },
+];
+
+const TASKS = {
+  sales:['파트너 발주서 확인','현지 재고 리포트 수신','바이어 회신 정리','샘플 발송 요청 접수','가격표 개정 반영'],
+  source:['신규 브랜드 3건 리스트업','브랜드 심사표 작성','계약 초안 검토','경쟁사 라인업 비교'],
+  docs:['CFS 유효기간 점검','INCI 성분 대조','등록 진행상황 갱신','라벨 오탈자 검수','GMP 사본 정리'],
+  logi:['선사 부킹 확인','적입 플랜 계산','수출신고 접수','도착예정일 갱신'],
+  fin:['환율 시세 반영','입금 대사','원가표 갱신','마진율 재계산'],
+  mkt:['카탈로그 페이지 수정','콘텐츠 초안 작성','이미지 리터칭 요청'],
+};
+
+/* ===================== 상태 ===================== */
+let simMin = 7*60;            // 사내 시각(분)
+let running = false;
+let speed = 1;
+let track = true;
+let selected = null;
+const state = {};             // 직원별 런타임 상태
+STAFF.forEach(s=>{ state[s.n] = { st:'미출근', done:0, bubble:null, bt:0 }; });
+
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2,'0');
+const hhmm = m => pad(Math.floor(m/60)%24)+':'+pad(m%60);
+const toMin = t => (+t.slice(0,2))*60 + (+t.slice(3));
+
+/* ===================== 렌더 ===================== */
+function avatar(s){
+  return `<svg class="av" width="26" height="26" viewBox="0 0 26 26">
+    <ellipse cx="13" cy="21" rx="9" ry="4.5" fill="${s.top}"/>
+    <circle cx="13" cy="12" r="6.5" fill="#F2D3B8"/>
+    <path d="M6.5 11.5a6.5 6.5 0 0 1 13 0z" fill="${s.hair}"/>
+    <circle cx="4.5" cy="19" r="2" fill="#F2D3B8"/>
+    <circle cx="21.5" cy="19" r="2" fill="#F2D3B8"/>
+  </svg>`;
+}
+
+function buildFloor(){
+  $('floor').innerHTML = TEAMS.map(t=>{
+    const mem = STAFF.filter(s=>s.t===t.id);
+    return `<div class="room" id="room-${t.id}">
+      <h3><span class="dot"></span>${t.name}</h3>
+      <div class="sub">${t.sub} · ${mem.length}명</div>
+      <div class="desks">${mem.map(s=>`
+        <div class="desk" data-n="${s.n}" data-st="미출근">
+          <span class="led"></span>${avatar(s)}
+          <div class="nm">${s.n}</div>
+          <div class="rl">${s.r}</div>
+        </div>`).join('')}</div>
+    </div>`;
+  }).join('');
+  $('staffCount').textContent = 'AI STAFF '+STAFF.length;
+  document.querySelectorAll('.desk').forEach(d=>{
+    d.onclick = ()=>select(d.dataset.n);
+  });
+}
+
+function paint(){
+  $('simClock').textContent = hhmm(simMin);
+  STAFF.forEach(s=>{
+    const d = document.querySelector(`.desk[data-n="${s.n}"]`);
+    if(!d) return;
+    d.dataset.st = state[s.n].st;
+    d.classList.toggle('sel', selected===s.n);
+    const old = d.querySelector('.bubble');
+    if(old) old.remove();
+    if(state[s.n].bubble){
+      const b=document.createElement('div');
+      b.className='bubble'; b.textContent=state[s.n].bubble;
+      d.appendChild(b);
+    }
+  });
+  TEAMS.forEach(t=>{
+    const busy = STAFF.filter(s=>s.t===t.id).some(s=>['근무중','처리중','보고대기'].includes(state[s.n].st));
+    $('room-'+t.id).classList.toggle('active', busy);
+  });
+}
+
+function log(who, msg){
+  const el=document.createElement('div');
+  el.innerHTML = `<span class="t">${hhmm(simMin)}</span><b>${who}</b> ${msg}`;
+  $('log').prepend(el);
+  while($('log').childNodes.length>90) $('log').lastChild.remove();
+}
+
+function select(name){
+  selected = name;
+  const s = STAFF.find(x=>x.n===name), st = state[name];
+  $('detail').innerHTML = `
+    <h4>${s.n} · ${s.r}</h4>
+    <div class="kv"><span>소속</span><span>${TEAMS.find(t=>t.id===s.t).name}</span></div>
+    <div class="kv"><span>출근시간</span><span>${s.in}</span></div>
+    <div class="kv"><span>현재 상태</span><span>${st.st}</span></div>
+    <div class="kv"><span>오늘 처리</span><span>${st.done}건</span></div>
+    <div class="duty">${s.duty}</div>
+    <button class="go" id="goBtn">이 직원에게 직접 지시</button>`;
+  $('goBtn').onclick = ()=>{ $('cmd').focus(); $('cmd').placeholder = `${s.n}에게 지시…`; };
+  paint();
+}
+
+/* ===================== 시뮬레이션 ===================== */
+function tick(){
+  if(!running) return;
+  simMin += 5*speed;
+  if(simMin >= 19*60){ simMin = 19*60; running=false; log('시스템','전 직원 퇴근. 하루 종료.'); }
+
+  STAFF.forEach(s=>{
+    const st = state[s.n];
+    if(st.bubble && simMin - st.bt > 40) st.bubble = null;
+    if(st.st==='보고대기') return;
+
+    if(simMin < toMin(s.in)) st.st='미출근';
+    else if(simMin >= 18*60) st.st='퇴근';
+    else if(st.st==='미출근'){
+      st.st='근무중';
+      log(s.n, `출근. ${s.r} 업무 시작.`);
+    } else if(Math.random() < 0.13*speed){
+      const task = TASKS[s.t][Math.floor(Math.random()*TASKS[s.t].length)];
+      st.st='처리중'; st.done++; st.bubble=task; st.bt=simMin;
+      log(s.n, task+' 완료.');
+      setTimeout(()=>{ if(state[s.n].st==='처리중') state[s.n].st='근무중'; paint(); }, 1600);
+      if(track) focusRoom(s.t);
+    }
+  });
+  paint();
+  if(selected) select(selected);
+}
+
+let trackTimer=null;
+function focusRoom(tid){
+  document.querySelectorAll('.room').forEach(r=>r.classList.remove('track'));
+  $('room-'+tid).classList.add('track');
+  clearTimeout(trackTimer);
+  trackTimer = setTimeout(()=>$('room-'+tid).classList.remove('track'), 2000);
+}
+
+/* ===================== 실시간 시계 ===================== */
+setInterval(()=>{
+  const now = new Date(Date.now() + (new Date().getTimezoneOffset()*60000) + 9*3600000);
+  $('realClock').textContent = pad(now.getHours())+':'+pad(now.getMinutes());
+}, 1000);
+
+/* ===================== CEO 콘솔 (실제 AI 호출) ===================== */
+const ROUTE = [
+  [/아르헨|부에노스|ANMAT|현지/i,'한지우'],
+  [/스페인|EU|유럽|CPNP/i,'오세라'],
+  [/두바이|사우디|GCC|중동|할랄/i,'문가온'],
+  [/견적|단가|가격|FOB|CIF/i,'배시현'],
+  [/소싱|신규 ?브랜드|발굴|후보/i,'유래인'],
+  [/심사|MOQ|독점/i,'천도윤'],
+  [/계약/i,'서나린'],
+  [/CFS|GMP|판매증명/i,'강윤슬'],
+  [/성분|INCI|전성분/i,'노윤재'],
+  [/등록|인증/i,'임하경'],
+  [/라벨|표기/i,'백가온'],
+  [/선적|부킹|출항|스케줄/i,'조태민'],
+  [/적입|컨테이너|파레트/i,'구민아'],
+  [/통관|관세|HS/i,'황시온'],
+  [/환율|입금|송금|L\/C/i,'정하율'],
+  [/마진|원가|수익/i,'남우리'],
+  [/정산|세무|영세율/i,'권이도'],
+  [/카탈로그|소개서/i,'표이랑'],
+  [/콘텐츠|SNS|마케팅/i,'어름'],
+];
+function route(text){
+  if(selected) return selected;
+  for(const [re,n] of ROUTE) if(re.test(text)) return n;
+  return '한지우';
+}
+
+async function dispatch(text){
+  if(!text.trim()) return;
+  const name = route(text);
+  const s = STAFF.find(x=>x.n===name);
+  const st = state[name];
+  st.st='보고대기'; st.bubble='대표님 지시 처리 중…'; st.bt=simMin;
+  paint();
+  log('대표', `"${text}" → ${name} 배정.`);
+  $('out').innerHTML = `<span class="who">${name} · ${s.r}</span>\n작성 중…`;
+
+  try{
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-6", max_tokens:1000,
+        system: s.p + " 아우라코리아는 한국 화장품 수출 무역회사이며 아르헨티나·스페인·GCC가 주요 시장이다. 답변은 한국어로, 400자 이내로, 실무 담당자가 대표에게 보고하듯 간결하게 작성한다. 불확실한 수치는 확인 필요라고 명시한다.",
+        messages:[{role:"user", content:text}]
+      })
+    });
+    const data = await res.json();
+    const reply = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n") || "(응답 없음)";
+    $('out').innerHTML = `<span class="who">${name} · ${s.r}</span>\n${reply}`;
+    st.done++; st.bubble='보고 완료';
+    log(name, '대표 지시 보고 완료.');
+  }catch(e){
+    $('out').innerHTML = `<span class="err">호출 실패 — 이 사무실은 클로드 앱 안에서 열어야 직원이 응답합니다.\n파일을 브라우저에서 직접 열면 UI만 동작합니다.</span>`;
+    st.bubble='연결 실패';
+  }
+  st.st='근무중'; st.bt=simMin;
+  paint(); if(selected) select(selected);
+}
+
+/* ===================== 이벤트 ===================== */
+$('startBtn').onclick = ()=>{ running=true; log('시스템','업무 시작. 자동화 운영 ON.'); };
+$('pauseBtn').onclick = ()=>{ running=false; log('시스템','일시정지.'); };
+$('speedSeg').onclick = e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  speed=+b.dataset.sp;
+  [...$('speedSeg').children].forEach(x=>x.classList.toggle('on',x===b));
+};
+$('trackBtn').onclick = e=>{
+  track=!track;
+  e.target.classList.toggle('on',track);
+  e.target.textContent = '자동 추적 '+(track?'ON':'OFF');
+};
+$('sendBtn').onclick = ()=>{ dispatch($('cmd').value); $('cmd').value=''; };
+$('cmd').onkeydown = e=>{ if(e.key==='Enter'){ dispatch($('cmd').value); $('cmd').value=''; } };
+document.querySelectorAll('.quick button').forEach(b=>{
+  b.onclick = ()=>{ $('cmd').value=b.dataset.q; dispatch(b.dataset.q); $('cmd').value=''; };
+});
+
+buildFloor(); paint();
+log('시스템','아우라코리아 AI 오피스 부팅 완료. 하루 시작을 누르세요.');
+setInterval(tick, 1000);
+</script>
