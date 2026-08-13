@@ -777,7 +777,10 @@ const box = r => `left:${r.col*T}px;top:${r.row*T}px;width:${r.w*T}px;height:${r
 
 export function buildFloor(){
   const byRank = (a,b) => RANKS.indexOf(a.rank) - RANKS.indexOf(b.rank);
-  const roomPos = layoutTeamRooms(TEAMS.map(t => t.id));
+  // 방 높이를 인원수에 맞춰 잡는다 (도면 세로를 줄여 한 화면에 들어오게 한다)
+  const roomPos = layoutTeamRooms(
+    TEAMS.map(t => ({ id: t.id, count: STAFF.filter(s => s.t === t.id).length }))
+  );
 
   /* ── 팀 룸 ── */
   const teamRooms = TEAMS.map(t => {
@@ -901,21 +904,59 @@ export function buildFloor(){
   document.querySelectorAll('.desk').forEach(d => {
     d.onclick = () => select(d.dataset.n);
   });
+  fitPlan();
   registerMeetingSeatPositions();
 }
 
-/* 미팅룸 좌석의 절대 좌표를 등록한다 (회의 참석자가 여기로 걸어간다) */
+/* ═══════════ 도면을 한 화면에 맞춘다 ═══════════
+   도면 원본은 타일 좌표 그대로 두고, 보이는 크기만 축소한다.
+   좌표 계산은 원본 기준이므로 이동 로직은 그대로 동작한다. */
+let planScale = 1;
+export function getPlanScale(){ return planScale; }
+
+export function fitPlan(){
+  const plan = document.querySelector('.plan');
+  const floor = $('floor');
+  if(!plan || !floor) return;
+
+  const padding = 20;
+  const availW = floor.clientWidth - padding;
+  // 화면 세로에서 도면 위(헤더·칩·컨트롤)를 뺀 만큼만 쓴다
+  const availH = window.innerHeight - floor.getBoundingClientRect().top - 28;
+
+  const w = GRID.cols * T, h = GRID.rows * T;
+  planScale = Math.min(availW / w, availH / h, 1);
+
+  plan.style.transformOrigin = 'top left';
+  plan.style.transform = `scale(${planScale})`;
+  // 축소된 만큼만 자리를 차지하게 하고, 남는 가로 여백은 좌우로 나눠 가운데 놓는다
+  const gapX = Math.max(0, availW - w * planScale);
+  plan.style.marginLeft   = `${gapX / 2}px`;
+  plan.style.marginRight  = `${-(w - w * planScale) + gapX / 2}px`;
+  plan.style.marginBottom = `${-(h - h * planScale)}px`;
+}
+
+// 창 크기가 바뀌면 다시 맞춘다
+let fitTimer = null;
+if(typeof window !== 'undefined'){
+  window.addEventListener('resize', () => {
+    clearTimeout(fitTimer);
+    fitTimer = setTimeout(() => { fitPlan(); registerMeetingSeatPositions(); }, 150);
+  });
+}
+
+/* 미팅룸 좌석의 절대 좌표를 등록한다 (회의 참석자가 여기로 걸어간다).
+   화면이 축소돼 있으면 getBoundingClientRect 값도 축소돼 있으므로 배율로 되돌린다. */
 function registerMeetingSeatPositions(){
-  const m = MEETING_ROOM;
+  const planEl = document.querySelector('.plan');
+  if(!planEl) return;
+  const pr = planEl.getBoundingClientRect();
+  const s = planScale || 1;
   document.querySelectorAll('.mseat').forEach(el => {
-    const name = el.dataset.seat;
     const r = el.getBoundingClientRect();
-    const planEl = document.querySelector('.plan');
-    if(!planEl) return;
-    const pr = planEl.getBoundingClientRect();
-    registerMeetingSeat(name, {
-      col: (r.left - pr.left + r.width/2) / T,
-      row: (r.top  - pr.top  + r.height/2) / T,
+    registerMeetingSeat(el.dataset.seat, {
+      col: ((r.left - pr.left + r.width/2)  / s) / T,
+      row: ((r.top  - pr.top  + r.height/2) / s) / T,
     });
   });
 }

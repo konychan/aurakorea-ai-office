@@ -35,12 +35,15 @@ export const CEO = {
 };
 
 /* ===================== 본부장 (직원 명단과 별도 관리) ===================== */
+/* 본부장 복장은 대표(짙은 남색 정장 + 빨간 넥타이)와 확실히 구분한다.
+   회색 정장 + 청록 넥타이 + 가슴에 '본부장' 명찰 (헌장 10항). */
 export const HQ_MANAGER = {
   name: '공민규',
   title: '본부장',
-  hair: '#241C28',
-  suit: '#2F3B52',
-  tie: '#B04A6A',
+  hair: '#3A3140',
+  suit: '#6E6480',     // 회색 정장 (대표는 짙은 남색)
+  tie:  '#2FA8A0',     // 청록 넥타이 (대표는 빨강)
+  badge:'#E7C066',     // 가슴 명찰
   chair: '#7A6A88',
   desk: '#4A3A2E',
 };
@@ -57,7 +60,7 @@ export const COMPANY = {
 };
 
 /* ═══════════ 격자 ═══════════ */
-export const GRID = { tile: 18, cols: 58, rows: 69 };
+export const GRID = { tile: 18, cols: 58, rows: 59 };
 
 /* ═══════════ 중앙 복도 ═══════════
    세로 복도가 도면 한가운데를 위아래로 관통하고, 각 방 앞에서 가로 통로가 갈라진다. */
@@ -66,7 +69,7 @@ export const CORRIDOR = {
   w: 4,             // 복도 폭 (tile)
   get cx(){ return this.x + this.w / 2; },   // 복도 중심선 = 27
   top: 10,          // 복도가 시작되는 row (대표실 아래)
-  bottom: 63,       // 복도가 끝나는 row (정문 앞)
+  bottom: 55,       // 복도가 끝나는 row (정문 앞)
 };
 
 /* ═══════════ 상단 중앙 — 대표실 · 본부장실 · 미팅룸 ═══════════
@@ -94,21 +97,35 @@ export const TEAM_SIDE = {
   right: { col: 35 },       // 복도 오른쪽
 };
 
-/* 팀 id 배열을 받아 좌우로 번갈아 배치한다.
+/* 인원수에 맞는 방 높이 — 자리는 2열로 놓이므로 줄 수만큼만 높이를 준다.
+   (2명이면 1줄, 3~4명이면 2줄) 덕분에 도면 세로가 짧아져 한 화면에 잘 들어온다. */
+export function roomHeightFor(count){
+  const rows = Math.max(1, Math.ceil(count / 2));
+  return Math.ceil(2.6 + rows * 5.4 + 0.6);   // 헤더 + 자리줄 + 여백
+}
+
+/* 팀 목록을 받아 좌우로 번갈아 배치한다.
+   teams: [{ id, count }] — count 는 그 팀 인원수
    door = 그 방에서 복도로 나오는 지점 (캐릭터는 반드시 이 문을 거친다) */
-export function layoutTeamRooms(teamIds){
+export function layoutTeamRooms(teams){
   const pos = {};
-  teamIds.forEach((id, i) => {
+  const nextRow = { left: TEAM_ROOM.startRow, right: TEAM_ROOM.startRow };
+
+  teams.forEach((t, i) => {
+    const id = typeof t === 'string' ? t : t.id;
+    const count = typeof t === 'string' ? 4 : (t.count || 4);
     const side = i % 2 === 0 ? 'left' : 'right';
-    const rowIdx = Math.floor(i / 2);
+    const h = roomHeightFor(count);
     const col = TEAM_SIDE[side].col;
-    const row = TEAM_ROOM.startRow + rowIdx * (TEAM_ROOM.h + TEAM_ROOM.gapY);
+    const row = nextRow[side];
+    nextRow[side] = row + h + TEAM_ROOM.gapY;
+
     pos[id] = {
-      side, col, row, w: TEAM_ROOM.w, h: TEAM_ROOM.h,
+      side, col, row, w: TEAM_ROOM.w, h,
       // 문은 복도를 향한 쪽 벽면 중앙에 낸다
       door: {
         col: side === 'left' ? col + TEAM_ROOM.w : col,
-        row: row + TEAM_ROOM.h / 2,
+        row: row + h / 2,
       },
     };
   });

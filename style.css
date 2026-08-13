@@ -135,7 +135,7 @@ button{font-family:inherit;cursor:pointer}
   position:relative;
   background:var(--floor-2);
   border:3px solid var(--line);border-radius:12px;padding:10px;
-  overflow:auto;
+  overflow:hidden;          /* 도면을 화면에 맞춰 축소하므로 스크롤이 필요 없다 */
 }
 .plan{
   position:relative;

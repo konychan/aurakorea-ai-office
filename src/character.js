@@ -208,10 +208,21 @@ export function character(s, { pose = 'sit', withProp = true, className = '' } =
     : sitSVG(s, skin, hair, outfit, isLeader, className);
 }
 
-/* 대표·본부장처럼 STAFF에 없는 인물도 같은 규격으로 그린다 */
-export function vipCharacter({ hair, suit, tie, sk = 0, hs = 'side', fc = 'calm' }, pose = 'sit'){
-  return character(
+/* 대표·본부장처럼 STAFF에 없는 인물도 같은 규격으로 그린다.
+   badge 색을 주면 가슴에 명찰이 달린다 (본부장 구분용 · 헌장 10항). */
+export function vipCharacter({ hair, suit, tie, badge, sk = 0, hs = 'side', fc = 'calm' }, pose = 'sit'){
+  let svg = character(
     { hair, top: suit, sk, hs, fc, rank: '팀장', t: '_vip' },
     { pose, withProp: false, className: 'char--vip' }
   ).replace('#B04A6A', tie || '#B04A6A');
+
+  // 가슴 명찰 — 넥타이 옆에 달아 대표와 한눈에 구분되게 한다
+  if(badge){
+    svg = svg.replace('</svg>',
+      `<g class="vipBadge">
+         <rect x="19.6" y="27" width="6.4" height="4.4" rx="1" fill="${badge}"/>
+         <rect x="20.6" y="28.4" width="4.4" height=".9" rx=".45" fill="#5A4A1E" opacity=".7"/>
+       </g></svg>`);
+  }
+  return svg;
 }
