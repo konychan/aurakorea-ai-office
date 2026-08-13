@@ -227,6 +227,44 @@ button{font-family:inherit;cursor:pointer}
   padding:2px 8px;border-radius:2px;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,.3);
 }
 
+/* ---------- 본부장실 ---------- */
+.hqRoom{
+  position:relative;overflow:hidden;
+  background:linear-gradient(150deg,#3A3350,#262034);
+  border:2px solid #6E6288;border-radius:12px;
+  box-shadow:0 0 0 3px rgba(110,98,136,.16), 0 6px 16px rgba(20,10,30,.28);
+  padding:10px 14px 12px;margin-bottom:12px;
+}
+.hqRoom__label{
+  display:flex;align-items:center;gap:8px;
+  color:#CFC3E8;font-size:11px;letter-spacing:.8px;margin-bottom:2px;
+}
+.hqRoom__label .en{color:#8C7FAD;font-size:9px;letter-spacing:1.4px}
+.hqRoom__present{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:10px;color:#C9E8D8}
+.hqRoom__present i{width:6px;height:6px;border-radius:50%;background:var(--mint);animation:pulse 1.6s infinite}
+.hqRoom__scene{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.hqRoom__deskWrap{position:relative}
+.hqRoom__nameplate{
+  position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);
+  background:#9C8AAE;color:#1E1A26;font-size:9px;padding:2px 7px;border-radius:2px;white-space:nowrap;
+}
+.hqRoom__chain{
+  display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+  font-size:10px;color:#B7A9D6;margin-bottom:10px;
+}
+.hqRoom__chain b{color:#CFC3E8;margin-right:4px;font-weight:normal}
+.hqRoom__chain span{background:#4A4166;padding:2px 7px;border-radius:999px;color:#EDE6F5}
+.hqRoom__chain span.me{background:#9C8AAE;color:#1E1A26}
+.hqRoom__chain span.ceo{background:var(--exec-gold);color:#2B2140}
+.hqRoom__chain i{color:#7A6E96;font-style:normal}
+
+/* ---------- 구역 라벨 ---------- */
+.zoneLabel{
+  font-size:10px;color:var(--ink-2);letter-spacing:1px;
+  margin:2px 4px 7px;display:flex;align-items:center;gap:8px;
+}
+.zoneLabel:after{content:"";flex:1;height:1px;background:var(--line)}
+
 .queueRow{
   display:flex;align-items:center;gap:8px;margin:2px 4px 14px;
   font-size:10px;color:var(--ink-2);
@@ -248,9 +286,42 @@ button{font-family:inherit;cursor:pointer}
 
 .teamGrid{
   display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-content:start;
+  margin-bottom:14px;
 }
 @media(max-width:1280px){.teamGrid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:640px){.teamGrid{grid-template-columns:1fr}}
+
+/* 지역팀은 팀 색상 강조 테두리를 준다 */
+.room.region{border-left:5px solid var(--accent)}
+.room .kindTag{
+  margin-left:auto;font-size:9px;color:var(--ink-2);
+  background:var(--room-2);border:1px solid var(--line);border-radius:999px;padding:1px 6px;
+}
+
+/* 팀장 자리 구분 */
+.desk.leader{
+  border-color:var(--accent, var(--rose));
+  background:linear-gradient(180deg,#FFFDF6,var(--room-2));
+  box-shadow:inset 0 0 0 1px rgba(231,192,102,.5);
+}
+.desk .nm .rank{
+  display:inline-block;margin-left:4px;font-size:8px;color:var(--ink-2);
+  background:var(--room);border:1px solid var(--line);border-radius:999px;padding:0 4px;
+}
+.desk.leader .nm .rank{background:var(--exec-gold);border-color:var(--exec-gold-2);color:#2B2140}
+
+/* 상세 패널 직급 태그 · 보고 경로 */
+.rankTag{
+  font-size:9px;color:var(--ink-2);background:var(--room-2);
+  border:1px solid var(--line);border-radius:999px;padding:1px 7px;margin-left:5px;
+}
+.rankTag.lead{background:var(--exec-gold);border-color:var(--exec-gold-2);color:#2B2140}
+.chainBox{
+  margin:8px 0 9px;padding:7px 8px;border-radius:7px;
+  background:var(--room-2);border:1px dashed var(--line);
+  font-size:9px;line-height:1.6;color:var(--ink-2);
+}
+.chainBox b{display:block;color:var(--ink);font-size:10px;margin-bottom:3px;font-weight:normal}
 
 .room{
   background:var(--room);border:2px solid var(--line);border-radius:10px;

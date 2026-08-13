@@ -1,6 +1,6 @@
 import { TEAMS } from '../data/teams.js';
-import { STAFF } from '../data/staff.js';
-import { CEO, CEO_ROOM, CEO_QUEUE, ENTRANCE, WORK_HOURS, SIM_WINDOW } from '../data/layout.js';
+import { STAFF, RANKS, LEADER_OF } from '../data/staff.js';
+import { CEO, HQ_MANAGER, CEO_ROOM, CEO_QUEUE, ENTRANCE, WORK_HOURS, SIM_WINDOW } from '../data/layout.js';
 
 /* ===================== 공용 유틸 (시계 표기) ===================== */
 export const $ = id => document.getElementById(id);
@@ -308,21 +308,48 @@ function ceoPlant(){
   </svg>`;
 }
 
+/* ===================== 본부장 전용 씬 (작은 집무실) ===================== */
+function hqScene(){
+  return `<svg width="110" height="84" viewBox="0 0 110 84">
+    <ellipse cx="55" cy="78" rx="40" ry="5" fill="rgba(0,0,0,.22)"/>
+    <path d="M32 28 q23 -16 46 0 l0 22 q-23 12 -46 0 z" fill="${HQ_MANAGER.chair}" opacity=".9"/>
+    <rect x="22" y="48" width="66" height="24" rx="3" fill="${HQ_MANAGER.desk}"/>
+    <rect x="22" y="48" width="66" height="5" rx="2" fill="#9C8AAE"/>
+    <rect x="30" y="57" width="14" height="10" rx="1" fill="#33281F"/>
+    <rect x="62" y="56" width="20" height="13" rx="2" fill="#1E1A22"/>
+    <rect x="64" y="58" width="16" height="9" rx="1" fill="#6BE3E0" opacity=".55"/>
+    <ellipse cx="55" cy="55" rx="16" ry="7" fill="${HQ_MANAGER.suit}"/>
+    <circle cx="45" cy="42" r="1.8" fill="#F2D3B8"/>
+    <circle cx="65" cy="42" r="1.8" fill="#F2D3B8"/>
+    <circle cx="55" cy="37" r="9" fill="#F2D3B8"/>
+    <path d="M46 35a9 9 0 0 1 18 0c0 1.6 -.8 2.4 -2.4 2.4h-13.2c-1.6 0-2.4 -.8-2.4 -2.4z" fill="${HQ_MANAGER.hair}"/>
+    <rect x="51" y="46" width="8" height="7" fill="#fff"/>
+    <path d="M53.5 46 L55 51.5 L56.5 46 Z" fill="${HQ_MANAGER.tie}"/>
+  </svg>`;
+}
+
 /* ===================== 사무실 렌더링 ===================== */
 export function buildFloor(){
-  const teamHTML = TEAMS.map(t=>{
-    const mem = STAFF.filter(s=>s.t===t.id);
-    return `<div class="room" id="room-${t.id}" data-col="0" data-row="0">
-      <h3><span class="dot"></span>${t.name}</h3>
-      <div class="sub">${t.sub} · ${mem.length}명</div>
+  // 팀장이 항상 맨 앞에 오도록 정렬한다 (팀장 → 과장 → 대리 → 사원)
+  const byRank = (a,b) => RANKS.indexOf(a.rank) - RANKS.indexOf(b.rank);
+
+  const roomHTML = t => {
+    const mem = STAFF.filter(s=>s.t===t.id).sort(byRank);
+    const leader = mem.find(s=>s.rank==='팀장');
+    return `<div class="room ${t.kind}" id="room-${t.id}" data-col="0" data-row="0" style="--accent:${t.accent}">
+      <h3><span class="dot"></span>${t.name}<span class="kindTag">${t.kind==='region'?'지역':'기능'}</span></h3>
+      <div class="sub">${t.sub} · ${mem.length}명${leader?` · 팀장 ${leader.n}`:''}</div>
       <div class="desks">${mem.map(s=>`
-        <div class="desk" data-n="${s.n}" data-st="미출근">
+        <div class="desk${s.rank==='팀장'?' leader':''}" data-n="${s.n}" data-st="미출근">
           <span class="led"></span>${avatar(s)}
-          <div class="nm">${s.n}</div>
+          <div class="nm">${s.n}<span class="rank">${s.rank}</span></div>
           <div class="rl">${s.r}</div>
         </div>`).join('')}</div>
     </div>`;
-  }).join('');
+  };
+
+  const regionHTML = TEAMS.filter(t=>t.kind==='region').map(roomHTML).join('');
+  const functionHTML = TEAMS.filter(t=>t.kind==='function').map(roomHTML).join('');
 
   const queueHTML = CEO_QUEUE.map(q=>`<div class="qslot" data-slot="${q.slot}" data-col="${q.col}" data-row="${q.row}">${q.slot}</div>`).join('');
 
@@ -345,9 +372,30 @@ export function buildFloor(){
         <div class="ceoRoom__plant">${ceoPlant()}</div>
       </div>
     </div>
+
+    <div class="hqRoom" id="hqRoom">
+      <div class="hqRoom__label">
+        본부장실 <span class="en">HQ OFFICE</span>
+        <span class="hqRoom__present"><i></i>재실중</span>
+      </div>
+      <div class="hqRoom__scene">
+        <div class="hqRoom__deskWrap">
+          ${hqScene()}
+          <div class="hqRoom__nameplate">${HQ_MANAGER.name} · ${HQ_MANAGER.title}</div>
+        </div>
+        <div class="hqRoom__chain">
+          <b>보고 경로</b>
+          <span>팀원</span><i>→</i><span>팀장</span><i>→</i><span class="me">본부장</span><i>→</i><span class="ceo">대표</span>
+        </div>
+      </div>
+    </div>
+
     <div class="queueRow"><span class="ql">보고 대기줄</span>${queueHTML}</div>
     <div class="corridor" id="corridor"></div>
-    <div class="teamGrid">${teamHTML}</div>
+    <div class="zoneLabel">지역본부</div>
+    <div class="teamGrid region">${regionHTML}</div>
+    <div class="zoneLabel">기능팀</div>
+    <div class="teamGrid">${functionHTML}</div>
     <div class="entranceMark" id="entrance" data-col="${ENTRANCE.col}" data-row="${ENTRANCE.row}"><i></i>${ENTRANCE.label}</div>
     <div id="walkers"></div>
   `;
@@ -411,13 +459,21 @@ export function select(name, simMin = lastSimMin){
       ${st.lastReal.sources && st.lastReal.sources.length ? `<ul class="sources">${st.lastReal.sources.map(src=>`<li><a href="${escapeHtml(src.url)}" target="_blank" rel="noopener">${escapeHtml(src.title)}</a></li>`).join('')}</ul>` : ''}
       ${st.lastReal.note ? `<div class="note">${escapeHtml(st.lastReal.note)}</div>` : ''}
     </div>` : '';
+  const leaderName = LEADER_OF[s.t];
+  // 보고 경로: 팀원이면 팀장을 거치고, 팀장이면 바로 본부장에게 보고한다.
+  const chain = s.rank === '팀장'
+    ? `${s.n} → ${HQ_MANAGER.name} 본부장 → ${CEO.name} 대표님`
+    : `${s.n} → ${leaderName} 팀장 → ${HQ_MANAGER.name} 본부장 → ${CEO.name} 대표님`;
   $('detail').innerHTML = `
-    <h4>${s.n} · ${s.r}</h4>
+    <h4>${s.n} <span class="rankTag${s.rank==='팀장'?' lead':''}">${s.rank}</span></h4>
+    <div class="kv"><span>담당</span><span>${s.r}</span></div>
     <div class="kv"><span>소속</span><span>${TEAMS.find(t=>t.id===s.t).name}</span></div>
+    ${s.rank!=='팀장' ? `<div class="kv"><span>직속 팀장</span><span>${leaderName}</span></div>` : ''}
     <div class="kv"><span>출근시간</span><span>${hhmm(WORK_HOURS.start)}</span></div>
     <div class="kv"><span>현재 상태</span><span>${st.st}</span></div>
     <div class="kv"><span>오늘 처리</span><span>${st.done}건</span></div>
     <div class="duty">${s.duty}</div>
+    <div class="chainBox"><b>보고 경로</b>${chain}</div>
     <button class="go" id="goBtn">이 직원에게 직접 지시</button>
     ${realBlock}`;
   $('goBtn').onclick = ()=>{ $('cmd').focus(); $('cmd').placeholder = `${s.n}에게 지시…`; };
