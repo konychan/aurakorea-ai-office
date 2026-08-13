@@ -1,6 +1,7 @@
 import { TEAMS } from '../data/teams.js';
 import { STAFF, RANKS, LEADER_OF } from '../data/staff.js';
-import { CEO, HQ_MANAGER, CEO_ROOM, CEO_QUEUE, ENTRANCE, WORK_HOURS, SIM_WINDOW } from '../data/layout.js';
+import { CEO, HQ_MANAGER, CEO_ROOM, CEO_QUEUE, ENTRANCE, WORK_HOURS, SIM_WINDOW,
+         COMPANY, MEETING_ROOM, LOUNGE } from '../data/layout.js';
 
 /* ===================== 공용 유틸 (시계 표기) ===================== */
 export const $ = id => document.getElementById(id);
@@ -70,6 +71,22 @@ function freeSlotView(i){
   el.removeAttribute('title');
 }
 
+/* 정문 개폐 — 캐릭터가 드나드는 동안만 열린다.
+   동시에 여러 명이 드나들 수 있으므로 참조 카운트로 관리한다. */
+let doorHolders = 0;
+function openFrontDoor(){
+  doorHolders++;
+  const d = $('frontDoor');
+  if(d) d.classList.add('open');
+}
+function closeFrontDoor(){
+  doorHolders = Math.max(0, doorHolders - 1);
+  if(doorHolders === 0){
+    const d = $('frontDoor');
+    if(d) d.classList.remove('open');
+  }
+}
+
 // 같은 직원의 이동 동작(출근/퇴근/보고/복귀)이 겹치지 않도록 순서대로 실행한다.
 // (예: 대표 지시 응답이 즉시 실패해도 '대표실 도착' 전에 '복귀'가 끼어들지 않게 막는다)
 const walkLocks = {};
@@ -92,9 +109,14 @@ async function _arriveWalk(name, simMin){
   if(!deskEl || !entranceEl) return;
   state[name].away = true;
   paint(simMin);
+  // 정문을 열고 들어온다 — 캐릭터가 갑자기 생기지 않는다
+  openFrontDoor();
+  await new Promise(r=>setTimeout(r, 320));
   const w = spawnWalker(s);
   const from = relPos(entranceEl), to = relPos(deskEl);
+  // 정문 → 통로(세로) → 자기 자리(가로) 순으로 걷는다
   await walkPath(w, [from, {x:from.x,y:to.y}, to]);
+  closeFrontDoor();
   w.remove();
   state[name].away = false;
   paint(simMin);
@@ -109,8 +131,12 @@ async function _leaveWalk(name, simMin){
   paint(simMin);
   const w = spawnWalker(s);
   const from = relPos(deskEl), to = relPos(entranceEl);
-  await walkPath(w, [from, {x:from.x,y:to.y}, to]);
+  // 자리 → 통로 → 정문. 문 앞에 도착할 즈음 문이 열린다
+  const walk = walkPath(w, [from, {x:from.x,y:to.y}, to]);
+  setTimeout(openFrontDoor, 700);
+  await walk;
   w.remove();
+  closeFrontDoor();
   state[name].away = false;
 }
 
@@ -328,6 +354,118 @@ function hqScene(){
   </svg>`;
 }
 
+/* ===================== 공용 공간 렌더링 (B 국면) ===================== */
+
+// 미팅룸 — 대표 상석, 본부장석, 팀장 지정석. F 국면 회의에서 이 좌석에 앉는다.
+function meetingRoomHTML(){
+  const leaders = STAFF.filter(s=>s.rank==='팀장');
+  const half = Math.ceil(leaders.length/2);
+  const seatChip = (name, role, cls) =>
+    `<div class="seat ${cls}" data-seat="${name}"><span class="seat__plate">${name}</span><span class="seat__role">${role}</span></div>`;
+
+  return `<div class="room2 meetingRoom" id="meetingRoom">
+    <div class="room2__label">
+      <svg class="ico" viewBox="0 0 24 24"><path d="M3 5h18v12H3z" fill="none" stroke="#6BE3E0" stroke-width="2"/><path d="M8 19h8" stroke="#6BE3E0" stroke-width="2"/></svg>
+      ${MEETING_ROOM.name} <span class="en">${MEETING_ROOM.nameEn}</span>
+      <span class="roomState idle" id="meetingState">사용 가능</span>
+    </div>
+    <div class="meeting__body">
+      <div class="projector">
+        <div class="projector__screen" id="projectorScreen">
+          <div class="projector__idle">회의 안건이 없습니다</div>
+        </div>
+        <div class="projector__stand"></div>
+      </div>
+      <div class="meeting__table">
+        <div class="seatRow top">${leaders.slice(0,half).map(s=>seatChip(s.n,'팀장','leader')).join('')}</div>
+        <div class="tableTop">
+          ${seatChip(CEO.name,'대표','head')}
+          <div class="tableSurface"><span>회의 테이블</span></div>
+          ${seatChip(HQ_MANAGER.name,'본부장','hq')}
+        </div>
+        <div class="seatRow bottom">${leaders.slice(half).map(s=>seatChip(s.n,'팀장','leader')).join('')}</div>
+      </div>
+      <div class="whiteboard"><span>화이트보드</span></div>
+    </div>
+    <div class="glassDoor" title="미팅룸 유리문"><i></i><i></i></div>
+  </div>`;
+}
+
+// 휴게 공간 — 커피머신·정수기·냉장고·간식·테이블
+function loungeHTML(){
+  return `<div class="room2 lounge" id="lounge">
+    <div class="room2__label">
+      <svg class="ico" viewBox="0 0 24 24"><path d="M5 8h11v7a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z" fill="none" stroke="#E9B93F" stroke-width="2"/><path d="M16 10h3a2 2 0 0 1 0 4h-3" fill="none" stroke="#E9B93F" stroke-width="2"/></svg>
+      ${LOUNGE.name} <span class="en">${LOUNGE.nameEn}</span>
+    </div>
+    <div class="lounge__body">
+      <div class="fixture coffee" title="커피머신">
+        <div class="machine"><div class="machine__screen"></div><div class="machine__spout"></div><div class="cup"></div></div>
+        <span>커피머신</span>
+      </div>
+      <div class="fixture water" title="정수기">
+        <div class="dispenser"><div class="dispenser__tank"></div><div class="dispenser__body"></div></div>
+        <span>정수기</span>
+      </div>
+      <div class="fixture fridge" title="냉장고">
+        <div class="fridgeBox"><i></i><i></i></div>
+        <span>냉장고</span>
+      </div>
+      <div class="fixture snack" title="간식 진열대">
+        <div class="shelf"><span class="s1"></span><span class="s2"></span><span class="s3"></span><span class="s4"></span></div>
+        <span>간식</span>
+      </div>
+      <div class="fixture loungeTable" title="휴게 테이블">
+        <div class="ltable"><div class="ltable__top"></div><div class="ltable__leg"></div></div>
+        <span>휴게 테이블</span>
+      </div>
+      <div class="fixture bin" title="쓰레기통">
+        <div class="binBox"></div>
+        <span>정리대</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+// 업무 현황판
+function statusBoardHTML(){
+  return `<div class="room2 board" id="statusBoard">
+    <div class="room2__label">
+      <svg class="ico" viewBox="0 0 24 24"><path d="M4 4h16v14H4z" fill="none" stroke="#2FBF8B" stroke-width="2"/><path d="M7 14v-3M12 14V8M17 14v-5" stroke="#2FBF8B" stroke-width="2"/></svg>
+      업무 현황판 <span class="en">STATUS BOARD</span>
+    </div>
+    <div class="board__body" id="boardBody"></div>
+  </div>`;
+}
+
+// 정문 + 좌우 유리벽 + 안내 데스크
+function entranceHTML(){
+  return `<div class="frontZone">
+    <div class="glassWall left">
+      <div class="reception">
+        <div class="reception__desk"></div>
+        <div class="reception__sign">안내</div>
+      </div>
+    </div>
+
+    <div class="frontDoor" id="frontDoor">
+      <div class="doorHeader">
+        <span class="logo">${COMPANY.name}</span>
+        <span class="floorTag">${COMPANY.floor}</span>
+      </div>
+      <div class="doorFrame" id="entrance" data-col="${ENTRANCE.col}" data-row="${ENTRANCE.row}">
+        <div class="doorLeaf l"><i></i></div>
+        <div class="doorLeaf r"><i></i></div>
+      </div>
+      <div class="doorLabel">${ENTRANCE.label} · ${COMPANY.tagline}</div>
+    </div>
+
+    <div class="glassWall right">
+      <div class="wallLogo">${COMPANY.nameKo}</div>
+    </div>
+  </div>`;
+}
+
 /* ===================== 사무실 렌더링 ===================== */
 export function buildFloor(){
   // 팀장이 항상 맨 앞에 오도록 정렬한다 (팀장 → 과장 → 대리 → 사원)
@@ -396,7 +534,16 @@ export function buildFloor(){
     <div class="teamGrid region">${regionHTML}</div>
     <div class="zoneLabel">기능팀</div>
     <div class="teamGrid">${functionHTML}</div>
-    <div class="entranceMark" id="entrance" data-col="${ENTRANCE.col}" data-row="${ENTRANCE.row}"><i></i>${ENTRANCE.label}</div>
+
+    <div class="corridor" id="corridor2"></div>
+    <div class="zoneLabel">공용 공간</div>
+    <div class="commonGrid">
+      ${meetingRoomHTML()}
+      ${loungeHTML()}
+      ${statusBoardHTML()}
+    </div>
+
+    ${entranceHTML()}
     <div id="walkers"></div>
   `;
 
@@ -404,6 +551,28 @@ export function buildFloor(){
   document.querySelectorAll('.desk').forEach(d=>{
     d.onclick = ()=>select(d.dataset.n);
   });
+}
+
+/* ===================== 업무 현황판 =====================
+   각 팀의 인원과 현재 활동 상태를 한눈에 보여준다. 토큰을 쓰지 않는 로컬 표시다. */
+function updateBoard(){
+  const el = $('boardBody');
+  if(!el) return;
+  el.innerHTML = TEAMS.map(t=>{
+    const mem = STAFF.filter(s=>s.t===t.id);
+    const active = mem.filter(s=>['근무중','처리중','보고대기'].includes(state[s.n].st)).length;
+    const busy   = mem.filter(s=>state[s.n].st==='처리중').length;
+    const wait   = mem.filter(s=>state[s.n].st==='보고대기').length;
+    const done   = mem.reduce((n,s)=>n+state[s.n].done, 0);
+    const pct    = mem.length ? Math.round(active/mem.length*100) : 0;
+    return `<div class="boardRow">
+      <span class="bt" style="--accent:${t.accent}">${t.name}</span>
+      <span class="bar"><i style="width:${pct}%;background:${t.accent}"></i></span>
+      <span class="bn">${active}/${mem.length}</span>
+      <span class="bs">${busy?`처리 ${busy}`:''}${wait?` · 대기 ${wait}`:''}</span>
+      <span class="bd">${done}건</span>
+    </div>`;
+  }).join('');
 }
 
 /* ===================== 상태 요약 칩 ===================== */
@@ -440,6 +609,7 @@ export function paint(simMin){
     $('room-'+t.id).classList.toggle('active', busy);
   });
   updateChips();
+  updateBoard();
 }
 
 export function log(simMin, who, msg){

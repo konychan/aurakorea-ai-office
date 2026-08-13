@@ -59,6 +59,53 @@ export const CEO_QUEUE = Array.from({ length: 5 }, (_, i) => ({
 
 export const ENTRANCE = { label: '정문', col: Math.round(GRID.cols / 2), row: GRID.rows - 1 };
 
+/* ===================== 공용 공간 (B 국면) ===================== */
+
+// 회사 정보 — 정문 안내판과 로고에 쓴다
+export const COMPANY = {
+  name: 'AURAKOREA',
+  nameKo: '아우라코리아',
+  tagline: 'K-BEAUTY EXPORT',
+  floor: '1F',
+};
+
+// 미팅룸 — 대표 상석 + 본부장 + 각 팀장 지정석 (F 국면 회의에서 이 좌석을 쓴다)
+export const MEETING_ROOM = {
+  id: 'meeting',
+  name: '미팅룸',
+  nameEn: 'MEETING ROOM',
+  col: 2, row: GRID.rows - 9, w: 14, h: 7,
+  door: { col: 9, row: GRID.rows - 9 + 7 },
+  // 좌석 배치: head=상석(대표), 좌우로 본부장과 팀장들이 앉는다
+  seats: {
+    head: { who: 'CEO', label: '대표' },
+    hq:   { who: 'HQ_MANAGER', label: '본부장' },
+    // 팀장석은 팀 수만큼 자동 생성한다 (data/staff.js의 팀장이 앉는다)
+  },
+};
+
+// 커피·간식 휴게 공간
+export const LOUNGE = {
+  id: 'lounge',
+  name: '휴게 공간',
+  nameEn: 'LOUNGE',
+  col: 18, row: GRID.rows - 9, w: 10, h: 7,
+  door: { col: 23, row: GRID.rows - 9 + 7 },
+  // 배치 집기 (렌더링에서 이 목록을 그대로 그린다)
+  fixtures: ['커피머신', '정수기', '냉장고', '간식 진열대', '휴게 테이블', '쓰레기통'],
+};
+
+// 안내 데스크 (정문 안쪽)
+export const RECEPTION = {
+  col: ENTRANCE.col - 6, row: GRID.rows - 3, w: 5, h: 2,
+};
+
+// 정문 좌우 유리벽 구간
+export const GLASS_WALL = {
+  left:  { fromCol: 0, toCol: ENTRANCE.col - 3, row: GRID.rows - 1 },
+  right: { fromCol: ENTRANCE.col + 3, toCol: GRID.cols, row: GRID.rows - 1 },
+};
+
 // 정문 → 복도 → 대표실 대기줄 을 잇는 경로 웨이포인트 (3단계 이동 경로용)
 export const CORRIDOR = [
   { col: ENTRANCE.col, row: ENTRANCE.row },

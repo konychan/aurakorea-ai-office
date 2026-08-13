@@ -334,12 +334,242 @@ button{font-family:inherit;cursor:pointer}
 .room.active .dot{background:var(--mint);animation:pulse 1.4s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 
-.entranceMark{
-  display:flex;align-items:center;justify-content:center;gap:6px;
-  margin-top:14px;padding:6px;border-top:2px dashed var(--line);
-  font-size:10px;color:var(--ink-2);
+/* ═══════════ 공용 공간 (미팅룸 · 휴게공간 · 현황판) ═══════════ */
+.commonGrid{
+  display:grid;grid-template-columns:1.5fr 1.1fr 1fr;gap:12px;margin-bottom:16px;align-items:start;
 }
-.entranceMark i{width:8px;height:8px;background:var(--slate);border-radius:2px}
+@media(max-width:1100px){.commonGrid{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.commonGrid{grid-template-columns:1fr}}
+
+.room2{
+  background:var(--room);border:2px solid var(--line);border-radius:10px;
+  padding:9px 10px 11px;position:relative;
+}
+.room2__label{
+  display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink);margin-bottom:8px;
+}
+.room2__label .ico{width:13px;height:13px;flex:none}
+.room2__label .en{font-size:8px;color:var(--slate);letter-spacing:1px}
+.roomState{
+  margin-left:auto;font-size:9px;padding:2px 7px;border-radius:999px;
+  background:#E4F6EE;color:#1E7A57;border:1px solid #A8DCC6;
+}
+.roomState.busy{background:#FDE9F0;color:#A32B55;border-color:#F0A9C2}
+
+/* ── 미팅룸 ── */
+.meetingRoom{
+  background:
+    linear-gradient(180deg, rgba(107,227,224,.07), transparent 40%),
+    var(--room);
+  border-color:#A8D8DE;
+}
+.meeting__body{display:flex;flex-direction:column;gap:8px}
+
+.projector{display:flex;flex-direction:column;align-items:center}
+.projector__screen{
+  width:100%;max-width:230px;height:52px;border-radius:4px;
+  background:linear-gradient(180deg,#F7FCFD,#E4F3F5);
+  border:2px solid #8FBFC6;border-bottom-width:3px;
+  display:flex;align-items:center;justify-content:center;padding:5px;overflow:hidden;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.08);
+}
+.projector__idle{font-size:9px;color:var(--slate)}
+.projector__stand{width:34px;height:5px;background:#B7A8C2;border-radius:0 0 3px 3px}
+
+.meeting__table{display:flex;flex-direction:column;gap:4px;align-items:center}
+.seatRow{display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
+.tableTop{display:flex;align-items:center;gap:6px;width:100%;justify-content:center}
+.tableSurface{
+  flex:1;max-width:170px;height:34px;border-radius:6px;
+  background:linear-gradient(180deg,#8A6A48,#6B4F34);
+  border-bottom:4px solid #4A3524;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 3px 6px rgba(0,0,0,.22);
+}
+.tableSurface span{font-size:8px;color:#F0E2CE;letter-spacing:1px}
+
+.seat{
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+  background:var(--room-2);border:1px solid var(--line);border-radius:5px;
+  padding:3px 6px;min-width:44px;
+}
+.seat__plate{font-size:9px;color:var(--ink)}
+.seat__role{font-size:7px;color:var(--ink-2)}
+.seat.head{background:#FDF6E3;border-color:var(--exec-gold-2)}
+.seat.head .seat__role{color:#8A6A1E}
+.seat.hq{background:#EFEAF7;border-color:#9C8AAE}
+.seat.leader{background:#FFFDF6;border-color:#D9C36A}
+.seat.seated{box-shadow:0 0 0 2px var(--mint)}
+
+.whiteboard{
+  height:22px;border-radius:4px;background:#FBFBFD;border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+}
+.whiteboard span{font-size:8px;color:var(--slate);letter-spacing:1px}
+
+/* 미팅룸 유리문 */
+.glassDoor{
+  position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);
+  width:44px;height:6px;display:flex;gap:2px;
+}
+.glassDoor i{
+  flex:1;background:linear-gradient(180deg,rgba(160,220,230,.75),rgba(120,190,205,.55));
+  border:1px solid #8FBFC6;border-radius:1px;
+}
+
+/* ── 휴게 공간 ── */
+.lounge{border-color:#EBD9A8;background:linear-gradient(180deg,rgba(233,185,63,.06),transparent 40%),var(--room)}
+.lounge__body{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.fixture{
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;
+  background:var(--room-2);border:1px solid var(--line);border-radius:6px;
+  padding:6px 3px 4px;min-height:56px;
+}
+.fixture span{font-size:7px;color:var(--ink-2);text-align:center}
+
+.machine{width:20px;height:28px;background:#4A4453;border-radius:3px;position:relative}
+.machine__screen{position:absolute;top:3px;left:3px;right:3px;height:6px;background:#6BE3E0;border-radius:1px;opacity:.8}
+.machine__spout{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:4px;height:5px;background:#8C8697}
+.cup{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:8px;height:6px;background:#fff;border-radius:0 0 3px 3px;border:1px solid #C9C2D2}
+
+.dispenser{width:16px;height:28px;position:relative}
+.dispenser__tank{width:14px;height:12px;margin:0 auto;background:#A8D8E8;border-radius:3px 3px 1px 1px;opacity:.85}
+.dispenser__body{width:16px;height:16px;background:#E8E3EE;border:1px solid #C9C2D2;border-radius:2px}
+
+.fridgeBox{width:19px;height:28px;background:#DDE6EC;border:1px solid #B5C2CC;border-radius:3px;position:relative}
+.fridgeBox i{position:absolute;right:2px;width:2px;height:6px;background:#8C99A5;border-radius:1px}
+.fridgeBox i:first-child{top:8px}
+.fridgeBox i:last-child{top:17px}
+
+.shelf{width:24px;height:26px;background:#C9A97E;border-radius:2px;padding:2px;display:grid;grid-template-columns:1fr 1fr;gap:2px}
+.shelf span{border-radius:1px}
+.shelf .s1{background:#E56A92}.shelf .s2{background:#F2C87A}
+.shelf .s3{background:#9FD8C4}.shelf .s4{background:#B9C6EE}
+
+.ltable{width:28px;height:24px;position:relative}
+.ltable__top{width:28px;height:5px;background:#8A6A48;border-radius:2px;border-bottom:2px solid #5F4630}
+.ltable__leg{width:4px;height:17px;margin:0 auto;background:#6B4F34}
+
+.binBox{width:14px;height:18px;background:#B7A8C2;border-radius:2px 2px 4px 4px;border-top:3px solid #8C7FA0}
+
+/* ── 업무 현황판 ── */
+.board{border-color:#A8DCC6;background:linear-gradient(180deg,rgba(47,191,139,.06),transparent 40%),var(--room)}
+.board__body{display:flex;flex-direction:column;gap:4px}
+.boardRow{
+  display:grid;grid-template-columns:auto 1fr auto auto auto;
+  align-items:center;gap:5px;font-size:8px;color:var(--ink-2);
+}
+.boardRow .bt{color:var(--ink);white-space:nowrap;border-left:3px solid var(--accent);padding-left:4px}
+.boardRow .bar{height:5px;background:var(--room-2);border-radius:999px;overflow:hidden;min-width:20px}
+.boardRow .bar i{display:block;height:100%;border-radius:999px;transition:width .4s}
+.boardRow .bn{color:var(--ink);white-space:nowrap}
+.boardRow .bs{white-space:nowrap;color:var(--amber)}
+.boardRow .bd{white-space:nowrap;color:var(--mint)}
+
+/* ═══════════ 정문 · 유리벽 · 안내 ═══════════ */
+.frontZone{
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:0;
+  margin-top:6px;padding-top:10px;border-top:2px dashed var(--line);
+}
+
+.glassWall{
+  position:relative;height:76px;
+  background:
+    linear-gradient(115deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 22%,
+                    rgba(255,255,255,.35) 42%, rgba(255,255,255,0) 62%),
+    linear-gradient(180deg, rgba(190,225,235,.4), rgba(150,200,215,.28));
+  border:2px solid #9EC4D0;border-bottom-width:4px;
+}
+.glassWall.left{border-radius:8px 0 0 8px;border-right:none}
+.glassWall.right{border-radius:0 8px 8px 0;border-left:none}
+/* 유리 창틀 */
+.glassWall:before{
+  content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg, transparent 0 46px, rgba(120,170,190,.45) 46px 48px);
+  pointer-events:none;
+}
+.wallLogo{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  font-size:11px;color:#4E7C8C;letter-spacing:2px;opacity:.75;
+}
+
+.reception{
+  position:absolute;left:16px;bottom:10px;
+  display:flex;flex-direction:column-reverse;align-items:center;gap:4px;
+}
+.reception__desk{
+  width:56px;height:22px;border-radius:3px;
+  background:linear-gradient(180deg,#9C8AAE,#7A6A88);
+  border-bottom:3px solid #5E5069;box-shadow:0 2px 5px rgba(0,0,0,.2);
+  position:relative;
+}
+/* 안내데스크 위 응대 창구 */
+.reception__desk:before{
+  content:"";position:absolute;left:8px;right:8px;top:-4px;height:4px;
+  background:#C9C2D2;border-radius:2px 2px 0 0;
+}
+.reception__sign{
+  font-size:8px;color:#3E6B7A;letter-spacing:1.5px;
+  background:rgba(255,255,255,.7);border:1px solid #9EC4D0;
+  border-radius:999px;padding:1px 8px;white-space:nowrap;
+}
+
+/* 정문 */
+.frontDoor{display:flex;flex-direction:column;align-items:center;width:190px}
+.doorHeader{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  background:linear-gradient(180deg,#3B2E47,#2A2035);
+  border-radius:6px 6px 0 0;padding:5px 8px;border:2px solid #55476A;border-bottom:none;
+}
+.doorHeader .logo{font-size:11px;color:var(--exec-gold);letter-spacing:1.5px}
+.doorHeader .floorTag{font-size:8px;color:#B7A9D6;border:1px solid #6E6288;border-radius:999px;padding:0 5px}
+
+.doorFrame{
+  position:relative;width:100%;height:76px;display:flex;
+  border:3px solid #55476A;border-top:none;border-radius:0 0 4px 4px;
+  background:linear-gradient(180deg, rgba(190,225,235,.35), rgba(150,200,215,.22));
+  overflow:hidden;perspective:420px;
+}
+.doorLeaf{
+  flex:1;position:relative;
+  background:
+    linear-gradient(115deg, rgba(255,255,255,.6) 0%, rgba(255,255,255,0) 30%,
+                    rgba(255,255,255,.3) 52%, rgba(255,255,255,0) 72%),
+    linear-gradient(180deg, rgba(200,232,240,.55), rgba(160,208,222,.4));
+  border:1px solid #8FBFC6;
+  transition:transform .55s cubic-bezier(.4,0,.2,1);
+}
+.doorLeaf.l{transform-origin:left center;border-right:2px solid #6E6288}
+.doorLeaf.r{transform-origin:right center}
+/* 문 손잡이 */
+.doorLeaf i{
+  position:absolute;top:50%;width:3px;height:16px;background:#C9A24B;border-radius:2px;
+  transform:translateY(-50%);box-shadow:0 1px 2px rgba(0,0,0,.3);
+}
+.doorLeaf.l i{right:5px}
+.doorLeaf.r i{left:5px}
+/* 열림 상태 — 문짝이 안쪽으로 열리며 통로가 드러난다 */
+.frontDoor.open .doorLeaf.l{transform:rotateY(-58deg) translateZ(2px)}
+.frontDoor.open .doorLeaf.r{transform:rotateY(58deg) translateZ(2px)}
+.frontDoor.open .doorFrame{
+  background:linear-gradient(180deg, rgba(252,249,253,.9), rgba(239,225,242,.8));
+  box-shadow:inset 0 0 14px rgba(90,70,110,.18);
+}
+/* 열린 문 사이로 보이는 바닥 통로 */
+.frontDoor.open .doorFrame:after{
+  content:"";position:absolute;left:50%;bottom:0;transform:translateX(-50%);
+  width:44%;height:100%;background:linear-gradient(180deg,transparent,rgba(211,190,218,.5));
+}
+
+.doorLabel{
+  margin-top:5px;font-size:9px;color:var(--ink-2);letter-spacing:.5px;
+}
+
+@media(max-width:700px){
+  .frontZone{grid-template-columns:1fr}
+  .glassWall{display:none}
+  .frontDoor{width:100%;margin:0 auto}
+}
 
 .desks{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
 .desk{
