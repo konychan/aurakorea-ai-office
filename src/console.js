@@ -1,6 +1,7 @@
 import { STAFF, LEADER_OF } from '../data/staff.js';
 import { $, state, paint, log, select, selected } from './office.js';
 import { hqDispatch, submitForReview } from './orchestrator.js';
+import { detectMeetingCall, callMeeting, meeting } from './meeting.js';
 import { HQ_MANAGER } from '../data/layout.js';
 import { getSimMin } from './sim.js';
 
@@ -39,6 +40,19 @@ function route(text){
    헌장 14항: 결과는 대표님께 바로 가지 않고 팀장 검증 → 본부장 검토 → 보고 대기열을 거친다. */
 async function dispatch(text){
   if(!text.trim()) return;
+
+  // 대표님의 회의 소집 명령이면 업무 지시가 아니라 회의를 연다 (헌장 16항)
+  const call = detectMeetingCall(text);
+  if(call){
+    if(meeting.active){
+      $('out').innerHTML = `<span class="who">${HQ_MANAGER.name} 본부장</span>\n이미 "${meeting.title}"가 진행 중입니다. 종료 후 다시 소집해 주십시오.`;
+      return;
+    }
+    $('out').innerHTML = `<span class="who">${HQ_MANAGER.name} 본부장</span>\n${call.title} 소집합니다. 팀장들이 미팅룸으로 이동합니다.`;
+    callMeeting(call, getSimMin());
+    return;
+  }
+
   const name = route(text);
   const s = STAFF.find(x=>x.n===name);
   const st = state[name];

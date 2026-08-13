@@ -208,6 +208,140 @@ async function _returnFromReport(name, simMin){
   paint(simMin);
 }
 
+/* ═══════════ 회의 참석 이동 (F 국면 · 헌장 16항) ═══════════
+   참석자가 자기 자리에서 일어나 통로를 따라 미팅룸까지 걸어가 지정 좌석에 앉는다. */
+const seatEl = name => document.querySelector(`.mseat[data-seat="${name}"]`);
+
+function sitAtSeat(name, charHtml){
+  const el = seatEl(name);
+  if(!el) return;
+  const slot = el.querySelector('.mseat__char');
+  if(slot) slot.innerHTML = charHtml;
+  el.classList.add('seated');
+}
+function leaveSeat(name){
+  const el = seatEl(name);
+  if(!el) return;
+  const slot = el.querySelector('.mseat__char');
+  if(slot) slot.innerHTML = '';
+  el.classList.remove('seated', 'speaking');
+}
+
+/* 직원(팀장)이 미팅룸으로 이동해 착석한다 */
+export async function walkToMeeting(name, simMin){
+  const s = STAFF.find(x=>x.n===name);
+  const deskEl = document.querySelector(`.desk[data-n="${name}"]`);
+  const seat = seatEl(name);
+  if(!s || !deskEl || !seat) return;
+
+  return withWalkLock(name, async () => {
+    state[name].away = true;
+    state[name].bubble = '회의 참석';
+    paint(simMin);
+    const w = spawnWalker(s);
+    const from = relPos(deskEl), to = relPos(seat);
+    const corridorY = relPos($('corridor2') || $('corridor')).y;
+    // 자리 → 통로 → 미팅룸 유리문 → 지정 좌석
+    await walkPath(w, [from, {x:from.x,y:corridorY}, {x:to.x,y:corridorY}, to]);
+    w.remove();
+    sitAtSeat(name, character(s, { pose:'sit', className:'char--mini' }));
+    paint(simMin);
+  });
+}
+
+/* 회의가 끝나면 자기 자리로 걸어서 복귀한다 */
+export async function walkFromMeeting(name, simMin){
+  const s = STAFF.find(x=>x.n===name);
+  const deskEl = document.querySelector(`.desk[data-n="${name}"]`);
+  const seat = seatEl(name);
+  if(!s || !deskEl || !seat) return;
+
+  return withWalkLock(name, async () => {
+    const from = relPos(seat);
+    leaveSeat(name);
+    const w = spawnWalker(s);
+    const to = relPos(deskEl);
+    const corridorY = relPos($('corridor2') || $('corridor')).y;
+    await walkPath(w, [from, {x:from.x,y:corridorY}, {x:to.x,y:corridorY}, to]);
+    w.remove();
+    state[name].away = false;
+    state[name].bubble = null;
+    paint(simMin);
+  });
+}
+
+/* 대표·본부장은 직원이 아니므로 별도로 이동시킨다 */
+export async function walkVipToMeeting(who, vipDef){
+  const seat = seatEl(vipDef.name);
+  const roomEl = who === 'ceo' ? document.querySelector('.ceoRoom') : $('hqRoom');
+  if(!seat || !roomEl) return;
+
+  if(who === 'ceo') document.querySelector('.ceoRoom').classList.add('vacant');
+  else setHqPresent(false);
+
+  const w = document.createElement('div');
+  w.className = 'walker walker--hq';
+  w.innerHTML = vipCharacter(vipDef, 'walk');
+  $('walkers').appendChild(w);
+
+  const from = relPos(roomEl), to = relPos(seat);
+  const corridorY = relPos($('corridor2') || $('corridor')).y;
+  await walkPath(w, [from, {x:from.x,y:corridorY}, {x:to.x,y:corridorY}, to]);
+  w.remove();
+  sitAtSeat(vipDef.name, vipCharacter(vipDef).replace('class="char', 'class="char char--mini'));
+}
+
+export async function walkVipFromMeeting(who, vipDef){
+  const seat = seatEl(vipDef.name);
+  const roomEl = who === 'ceo' ? document.querySelector('.ceoRoom') : $('hqRoom');
+  if(!seat || !roomEl) return;
+
+  const from = relPos(seat);
+  leaveSeat(vipDef.name);
+  const w = document.createElement('div');
+  w.className = 'walker walker--hq';
+  w.innerHTML = vipCharacter(vipDef, 'walk');
+  $('walkers').appendChild(w);
+
+  const to = relPos(roomEl);
+  const corridorY = relPos($('corridor2') || $('corridor')).y;
+  await walkPath(w, [from, {x:from.x,y:corridorY}, {x:to.x,y:corridorY}, to]);
+  w.remove();
+  if(who === 'ceo') document.querySelector('.ceoRoom').classList.remove('vacant');
+  else setHqPresent(true);
+}
+
+/* 발언자 표시 — 한 번에 한 사람만 발언한다 (헌장 16항) */
+export function setSpeaker(name){
+  document.querySelectorAll('.mseat.speaking').forEach(el => el.classList.remove('speaking'));
+  if(name){
+    const el = seatEl(name);
+    if(el) el.classList.add('speaking');
+  }
+}
+
+export function setMeetingState(busy, label){
+  const text = label || (busy ? '회의 중' : '사용 가능');
+  const st = $('meetingState');
+  if(st){
+    st.textContent = text;
+    st.classList.toggle('busy', !!busy);
+  }
+  // 사이드 패널 배지도 같이 맞춘다
+  const badge = $('mtBadge');
+  if(badge){
+    badge.textContent = text;
+    badge.classList.toggle('on', !!busy);
+  }
+  const room = $('meetingRoom');
+  if(room) room.classList.toggle('inSession', !!busy);
+}
+
+export function setProjector(html){
+  const el = $('projectorScreen');
+  if(el) el.innerHTML = html || `<div class="projector__idle">회의 안건이 없습니다</div>`;
+}
+
 /* ═══════════ 본부장 이동 (E 국면 · 헌장 12항) ═══════════
    본부장은 평상시 본부장실 의자에 앉아 대기하다가, 지시가 오면 일어나
    담당 팀장 자리까지 직접 걸어가 지시를 전달하고 본부장실로 복귀한다. */
@@ -445,8 +579,13 @@ function meetingRoomHTML(){
   const leaders = STAFF.filter(s=>s.rank==='팀장');
   const half = Math.ceil(leaders.length/2);
   // 클래스명 앞에 m(meeting)을 붙여 직원 자리(.seat)와 이름이 겹치지 않게 한다
+  // .mseat__char 는 F 국면에서 참석자가 착석하면 캐릭터가 들어가는 자리다
   const seatChip = (name, role, cls) =>
-    `<div class="mseat ${cls}" data-seat="${name}"><span class="mseat__plate">${name}</span><span class="mseat__role">${role}</span></div>`;
+    `<div class="mseat ${cls}" data-seat="${name}">
+       <div class="mseat__char"></div>
+       <span class="mseat__plate">${name}</span>
+       <span class="mseat__role">${role}</span>
+     </div>`;
 
   return `<div class="room2 meetingRoom" id="meetingRoom">
     <div class="room2__label">

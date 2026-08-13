@@ -85,6 +85,12 @@
 담당 직원이 자동으로 배정됩니다.</div>
     </div>
 
+    <div class="card" id="mtPanel">
+      <h4>회의실 <span class="badge sub" id="mtBadge">사용 가능</span></h4>
+      <div id="meetingPanel"></div>
+      <div id="meetingResult"></div>
+    </div>
+
     <div class="card" id="reportPanel">
       <h4>대표 보고 대기열 <span class="badge" id="reportBadge">0</span></h4>
       <div class="rqList" id="reportQueue">
@@ -122,6 +128,7 @@
   import { initSim, getSimMin } from './src/sim.js';
   import { initConsole } from './src/console.js';
   import { initOrchestrator } from './src/orchestrator.js';
+  import { initMeeting } from './src/meeting.js';
   import { SIM_WINDOW } from './data/layout.js';
 
   function startApp(){
@@ -131,6 +138,7 @@
     initSim();
     initConsole();
     initOrchestrator(getSimMin);
+    initMeeting(getSimMin);
     log(SIM_WINDOW.open, '시스템','아우라코리아 AI 오피스 부팅 완료. 하루 시작을 누르세요.');
     setInterval(()=>{
       const now = new Date(Date.now() + (new Date().getTimezoneOffset()*60000) + 9*3600000);
