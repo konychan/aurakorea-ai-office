@@ -10,9 +10,146 @@ export const toMin = t => (+t.slice(0,2))*60 + (+t.slice(3));
 
 /* ===================== 런타임 상태 ===================== */
 export const state = {};
-STAFF.forEach(s=>{ state[s.n] = { st:'미출근', done:0, bubble:null, bt:0 }; });
+STAFF.forEach(s=>{ state[s.n] = { st:'미출근', done:0, bubble:null, bt:0, away:false }; });
 
 export let selected = null;
+
+/* ===================== 캐릭터 이동 (출근·퇴근·대표실 앞 줄서기) ===================== */
+function relPos(el){
+  const floorRect = $('floor').getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  return { x: r.left - floorRect.left + r.width/2, y: r.top - floorRect.top + r.height/2 };
+}
+
+function spawnWalker(s){
+  const w = document.createElement('div');
+  w.className = 'walker';
+  w.innerHTML = avatar(s);
+  $('walkers').appendChild(w);
+  return w;
+}
+
+function walkPath(w, points, msPerLeg=550){
+  return new Promise(resolve=>{
+    const anim = w.animate(
+      points.map(p=>({ left:p.x+'px', top:p.y+'px' })),
+      { duration: msPerLeg*(points.length-1), easing:'ease-in-out', fill:'forwards' }
+    );
+    anim.onfinish = resolve;
+    anim.oncancel = resolve;
+  });
+}
+
+// 대표실 앞 보고 대기줄 5칸 점유 현황
+const queueOccupancy = new Array(CEO_QUEUE.length).fill(null);
+function claimSlot(name){
+  const i = queueOccupancy.findIndex(v=>v===null);
+  if(i>=0) queueOccupancy[i] = name;
+  return i;
+}
+function releaseSlot(name){
+  const i = queueOccupancy.indexOf(name);
+  if(i>=0) queueOccupancy[i] = null;
+  return i;
+}
+function slotEl(i){ return document.querySelector(`.qslot[data-slot="${i+1}"]`); }
+function occupySlotView(i, s){
+  const el = slotEl(i); if(!el) return;
+  el.innerHTML = avatar(s);
+  el.classList.add('occ');
+  el.title = s.n;
+}
+function freeSlotView(i){
+  const el = slotEl(i); if(!el) return;
+  el.textContent = String(i+1);
+  el.classList.remove('occ');
+  el.removeAttribute('title');
+}
+
+// 같은 직원의 이동 동작(출근/퇴근/보고/복귀)이 겹치지 않도록 순서대로 실행한다.
+// (예: 대표 지시 응답이 즉시 실패해도 '대표실 도착' 전에 '복귀'가 끼어들지 않게 막는다)
+const walkLocks = {};
+function withWalkLock(name, fn){
+  const prev = walkLocks[name] || Promise.resolve();
+  const run = prev.then(fn, fn);
+  walkLocks[name] = run.catch(()=>{});
+  return run;
+}
+
+export function arriveWalk(name, simMin){ return withWalkLock(name, ()=>_arriveWalk(name, simMin)); }
+export function leaveWalk(name, simMin){ return withWalkLock(name, ()=>_leaveWalk(name, simMin)); }
+export function goReport(name, simMin){ return withWalkLock(name, ()=>_goReport(name, simMin)); }
+export function returnFromReport(name, simMin){ return withWalkLock(name, ()=>_returnFromReport(name, simMin)); }
+
+async function _arriveWalk(name, simMin){
+  const s = STAFF.find(x=>x.n===name);
+  const deskEl = document.querySelector(`.desk[data-n="${name}"]`);
+  const entranceEl = $('entrance');
+  if(!deskEl || !entranceEl) return;
+  state[name].away = true;
+  paint(simMin);
+  const w = spawnWalker(s);
+  const from = relPos(entranceEl), to = relPos(deskEl);
+  await walkPath(w, [from, {x:from.x,y:to.y}, to]);
+  w.remove();
+  state[name].away = false;
+  paint(simMin);
+}
+
+async function _leaveWalk(name, simMin){
+  const s = STAFF.find(x=>x.n===name);
+  const deskEl = document.querySelector(`.desk[data-n="${name}"]`);
+  const entranceEl = $('entrance');
+  if(!deskEl || !entranceEl) return;
+  state[name].away = true;
+  paint(simMin);
+  const w = spawnWalker(s);
+  const from = relPos(deskEl), to = relPos(entranceEl);
+  await walkPath(w, [from, {x:from.x,y:to.y}, to]);
+  w.remove();
+  state[name].away = false;
+}
+
+async function _goReport(name, simMin){
+  const s = STAFF.find(x=>x.n===name);
+  const deskEl = document.querySelector(`.desk[data-n="${name}"]`);
+  if(!deskEl) return;
+  state[name].away = true;
+  paint(simMin);
+  const w = spawnWalker(s);
+  const from = relPos(deskEl);
+  const corridorY = relPos($('corridor')).y;
+  const i = claimSlot(name);
+  if(i>=0){
+    const to = relPos(slotEl(i));
+    await walkPath(w, [from, {x:from.x,y:corridorY}, {x:to.x,y:corridorY}, to]);
+    w.remove();
+    occupySlotView(i, s);
+  } else {
+    await walkPath(w, [from, {x:from.x,y:corridorY}]);
+    w.remove();
+  }
+}
+
+async function _returnFromReport(name, simMin){
+  const s = STAFF.find(x=>x.n===name);
+  const deskEl = document.querySelector(`.desk[data-n="${name}"]`);
+  if(!deskEl) return;
+  const i = releaseSlot(name);
+  const corridorY = relPos($('corridor')).y;
+  const w = spawnWalker(s);
+  const to = relPos(deskEl);
+  if(i>=0){
+    const from = relPos(slotEl(i));
+    freeSlotView(i);
+    await walkPath(w, [from, {x:from.x,y:corridorY}, {x:to.x,y:corridorY}, to]);
+  } else {
+    await walkPath(w, [{x:to.x,y:corridorY}, to]);
+  }
+  w.remove();
+  state[name].away = false;
+  paint(simMin);
+}
 
 /* ===================== 결재 큐 (직원 안건 → 대표 승인/반려) ===================== */
 export const agendaQueue = [];
@@ -26,6 +163,7 @@ export function submitAgenda(name, title, simMin){
   state[name].bubble = title;
   state[name].bt = simMin;
   renderAgenda();
+  goReport(name, simMin);
   return item;
 }
 
@@ -40,6 +178,7 @@ export function resolveAgenda(id, approved, simMin){
   if(approved) st.done++;
   log(simMin, '대표', `"${item.title}" (${item.name}) ${approved?'승인':'반려'}.`);
   renderAgenda();
+  returnFromReport(item.name, simMin);
   paint(simMin);
 }
 
@@ -155,9 +294,10 @@ export function buildFloor(){
       </div>
     </div>
     <div class="queueRow"><span class="ql">보고 대기줄</span>${queueHTML}</div>
-    <div class="corridor"></div>
+    <div class="corridor" id="corridor"></div>
     <div class="teamGrid">${teamHTML}</div>
-    <div class="entranceMark" data-col="${ENTRANCE.col}" data-row="${ENTRANCE.row}"><i></i>${ENTRANCE.label}</div>
+    <div class="entranceMark" id="entrance" data-col="${ENTRANCE.col}" data-row="${ENTRANCE.row}"><i></i>${ENTRANCE.label}</div>
+    <div id="walkers"></div>
   `;
 
   $('staffCount').textContent = 'AI STAFF '+STAFF.length;
@@ -184,6 +324,7 @@ export function paint(simMin){
     if(!d) return;
     d.dataset.st = state[s.n].st;
     d.classList.toggle('sel', selected===s.n);
+    d.classList.toggle('away', !!state[s.n].away);
     const old = d.querySelector('.bubble');
     if(old) old.remove();
     if(state[s.n].bubble){

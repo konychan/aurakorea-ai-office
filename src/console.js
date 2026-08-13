@@ -1,5 +1,5 @@
 import { STAFF } from '../data/staff.js';
-import { $, state, paint, log, select, selected } from './office.js';
+import { $, state, paint, log, select, selected, goReport, returnFromReport } from './office.js';
 import { getSimMin } from './sim.js';
 
 /* ===================== 담당자 라우팅 ===================== */
@@ -40,6 +40,7 @@ async function dispatch(text){
   st.st='보고대기'; st.bubble='대표님 지시 처리 중…'; st.bt=simMin;
   paint(simMin);
   log(simMin, '대표', `"${text}" → ${name} 배정.`);
+  goReport(name, simMin);
   $('out').innerHTML = `<span class="who">${name} · ${s.r}</span>\n작성 중…`;
 
   try{
@@ -63,6 +64,7 @@ async function dispatch(text){
   const now = getSimMin();
   st.st='근무중'; st.bt=now;
   paint(now); if(selected) select(selected, now);
+  returnFromReport(name, now);
 }
 
 export function initConsole(){

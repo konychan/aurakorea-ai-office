@@ -1,6 +1,6 @@
 import { STAFF, TASKS, AGENDAS } from '../data/staff.js';
 import { WORK_HOURS, SIM_WINDOW } from '../data/layout.js';
-import { $, state, paint, log, select, selected, submitAgenda, resolveAgenda } from './office.js';
+import { $, state, paint, log, select, selected, submitAgenda, resolveAgenda, arriveWalk, leaveWalk } from './office.js';
 
 let simMin = SIM_WINDOW.open;
 let running = false;
@@ -31,10 +31,16 @@ function tick(){
     if(st.st==='보고대기') return;
 
     if(simMin < WORK_HOURS.start) st.st='미출근';
-    else if(simMin >= WORK_HOURS.end) st.st='퇴근';
-    else if(st.st==='미출근' || st.st==='퇴근'){
+    else if(simMin >= WORK_HOURS.end){
+      if(st.st !== '퇴근'){
+        st.st='퇴근';
+        log(simMin, s.n, '퇴근. 정문으로 이동합니다.');
+        leaveWalk(s.n, simMin);
+      }
+    } else if(st.st==='미출근' || st.st==='퇴근'){
       st.st='근무중';
       log(simMin, s.n, `출근. ${s.r} 업무 시작.`);
+      arriveWalk(s.n, simMin);
     } else if(Math.random() < 0.02*speed){
       const title = AGENDAS[s.t][Math.floor(Math.random()*AGENDAS[s.t].length)];
       submitAgenda(s.n, title, simMin);

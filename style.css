@@ -104,12 +104,18 @@ button{font-family:inherit;cursor:pointer}
 
 /* ---------- office floor ---------- */
 .floor{
+  position:relative;
   background:
     repeating-linear-gradient(0deg,transparent 0 39px,rgba(0,0,0,.035) 39px 40px),
     repeating-linear-gradient(90deg,transparent 0 39px,rgba(0,0,0,.035) 39px 40px),
     var(--floor-2);
   border:3px solid var(--line);border-radius:12px;padding:14px;
 }
+
+/* ---------- 캐릭터 이동 (걷기 오버레이) ---------- */
+#walkers{position:absolute;inset:0;pointer-events:none;z-index:30}
+.walker{position:absolute;top:0;left:0;width:26px;height:26px;transform:translate(-50%,-50%);filter:drop-shadow(0 3px 4px rgba(0,0,0,.35))}
+.desk.away .av{opacity:0;transform:translateY(6px)}
 
 /* ---------- 대표실 (executive office) ---------- */
 .ceoRoom{
@@ -203,6 +209,8 @@ button{font-family:inherit;cursor:pointer}
   display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--ink-2);
   background:var(--room);
 }
+.queueRow .qslot svg{width:16px;height:16px}
+.queueRow .qslot.occ{border-style:solid;border-color:var(--rose);background:#FDF0F5}
 
 .corridor{
   height:16px;margin:0 4px 14px;border-radius:8px;
