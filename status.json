@@ -1,0 +1,25 @@
+{
+  "updatedAt": null,
+  "ceo": { "name": "장경철", "title": "대표", "status": "재실" },
+  "staff": [
+    { "name": "한지우", "team": "sales", "role": "아르헨티나 데스크", "status": "미출근", "done": 0 },
+    { "name": "오세라", "team": "sales", "role": "스페인·EU 데스크", "status": "미출근", "done": 0 },
+    { "name": "문가온", "team": "sales", "role": "GCC 데스크", "status": "미출근", "done": 0 },
+    { "name": "배시현", "team": "sales", "role": "견적·단가", "status": "미출근", "done": 0 },
+    { "name": "유래인", "team": "source", "role": "브랜드 발굴", "status": "미출근", "done": 0 },
+    { "name": "천도윤", "team": "source", "role": "브랜드 심사", "status": "미출근", "done": 0 },
+    { "name": "서나린", "team": "source", "role": "계약조건", "status": "미출근", "done": 0 },
+    { "name": "강윤슬", "team": "docs", "role": "CFS·GMP", "status": "미출근", "done": 0 },
+    { "name": "노윤재", "team": "docs", "role": "INCI·성분", "status": "미출근", "done": 0 },
+    { "name": "임하경", "team": "docs", "role": "해외등록", "status": "미출근", "done": 0 },
+    { "name": "백가온", "team": "docs", "role": "라벨·표기", "status": "미출근", "done": 0 },
+    { "name": "조태민", "team": "logi", "role": "선적 스케줄", "status": "미출근", "done": 0 },
+    { "name": "구민아", "team": "logi", "role": "컨테이너 적입", "status": "미출근", "done": 0 },
+    { "name": "황시온", "team": "logi", "role": "통관·관세", "status": "미출근", "done": 0 },
+    { "name": "정하율", "team": "fin", "role": "환율·입금", "status": "미출근", "done": 0 },
+    { "name": "남우리", "team": "fin", "role": "원가·마진", "status": "미출근", "done": 0 },
+    { "name": "권이도", "team": "fin", "role": "정산·세무", "status": "미출근", "done": 0 },
+    { "name": "표이랑", "team": "mkt", "role": "카탈로그", "status": "미출근", "done": 0 },
+    { "name": "어름", "team": "mkt", "role": "콘텐츠", "status": "미출근", "done": 0 }
+  ]
+}

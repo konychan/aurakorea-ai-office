@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AURAKOREA AI OFFICE</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Galmuri11.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">AURAKOREA <b>AI COMPANY</b></div>
+  <div class="tag" id="staffCount">AI STAFF 0</div>
+  <div class="tag">K-BEAUTY EXPORT · REAL-TIME</div>
+  <div class="clock">
+    <div>
+      <div class="label">SEOUL 실시간</div>
+      <div class="t" id="realClock">--:--</div>
+    </div>
+    <div>
+      <div class="label">사내 근무시각</div>
+      <div class="t sim" id="simClock" style="font-size:16px">--:--</div>
+    </div>
+  </div>
+</div>
+
+<div class="chipbar">
+  <div class="chip work"><i></i>근무중 <b id="chipWork">0</b></div>
+  <div class="chip busy"><i></i>처리중 <b id="chipBusy">0</b></div>
+  <div class="chip wait"><i></i>보고대기 <b id="chipWait">0</b></div>
+  <div class="chip off"><i></i>미출근 <b id="chipOff">0</b></div>
+</div>
+
+<div class="controls">
+  <button class="btn mint" id="startBtn">하루 시작</button>
+  <button class="btn" id="pauseBtn">일시정지</button>
+  <div class="seg" id="speedSeg">
+    <button data-sp="1" class="on">1x</button>
+    <button data-sp="2">2x</button>
+    <button data-sp="4">4x</button>
+    <button data-sp="12">퇴근까지</button>
+  </div>
+  <button class="btn on" id="trackBtn">자동 추적 ON</button>
+  <div class="spacer"></div>
+  <div class="legend">
+    <span><i style="background:var(--mint)"></i>근무중</span>
+    <span><i style="background:var(--amber)"></i>처리중</span>
+    <span><i style="background:var(--rose)"></i>보고대기</span>
+    <span><i style="background:var(--slate)"></i>미출근</span>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="floor" id="floor"></div>
+
+  <div class="side">
+    <div class="panel">
+      <h4>ceo.console — 대표 지시창 <span class="win">● ● ●</span></h4>
+      <div class="quick">
+        <button data-q="오늘 아르헨티나 건 진행상황 보고">일일 보고</button>
+        <button data-q="이번 선적 수출서류 누락 없는지 검토">서류 검토</button>
+        <button data-q="신규 K뷰티 브랜드 소싱 후보 정리">브랜드 소싱</button>
+        <button data-q="환율 변동 반영해서 마진 다시 계산">마진 재계산</button>
+        <button data-q="스페인 CPNP 등록 준비사항 정리">CPNP 등록</button>
+        <button data-q="컨테이너 적입 스케줄 확인">선적 스케줄</button>
+      </div>
+      <div class="row">
+        <input id="cmd" placeholder="대표 지시를 입력하세요 (예: 화성 창고 재고 확인)">
+        <button class="send" id="sendBtn">지시</button>
+      </div>
+      <div class="out" id="out">대표님 지시를 기다리는 중입니다.
+담당 직원이 자동으로 배정됩니다.</div>
+    </div>
+
+    <div class="card" id="detail">
+      <h4>직원 상세</h4>
+      <div class="empty">자리를 클릭하면 담당 업무와 출근시간이 표시됩니다.</div>
+    </div>
+
+    <div class="logbox">
+      <h4>업무 로그</h4>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initOffice, $, log } from './src/office.js';
+  import { initSim } from './src/sim.js';
+  import { initConsole } from './src/console.js';
+  import { SIM_WINDOW } from './data/layout.js';
+
+  initOffice();
+  initSim();
+  initConsole();
+  log(SIM_WINDOW.open, '시스템','아우라코리아 AI 오피스 부팅 완료. 하루 시작을 누르세요.');
+
+  setInterval(()=>{
+    const now = new Date(Date.now() + (new Date().getTimezoneOffset()*60000) + 9*3600000);
+    const pad = n => String(n).padStart(2,'0');
+    $('realClock').textContent = pad(now.getHours())+':'+pad(now.getMinutes());
+  }, 1000);
+</script>
+</body>
+</html>
