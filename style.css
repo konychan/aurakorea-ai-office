@@ -126,9 +126,18 @@ button{font-family:inherit;cursor:pointer}
 .legend{display:flex;gap:12px;font-size:11px;color:var(--ink-2)}
 .legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
 
-/* ---------- layout ---------- */
-.stage{display:grid;grid-template-columns:1fr 340px;gap:14px;padding:14px 16px 22px}
-@media(max-width:940px){.stage{grid-template-columns:1fr}}
+/* ---------- layout ----------
+   도면과 오른쪽 패널이 화면 한 장 안에 들어오게 하고,
+   내용이 긴 오른쪽 패널만 내부에서 스크롤되게 한다. */
+.stage{
+  display:grid;grid-template-columns:1fr 340px;gap:14px;padding:14px 16px 16px;
+  height:calc(100vh - 174px);min-height:520px;
+}
+.side{overflow-y:auto;padding-right:4px}
+@media(max-width:940px){
+  .stage{grid-template-columns:1fr;height:auto}
+  .side{overflow:visible}
+}
 
 /* ═══════════ 사무실 도면 (절대 좌표 배치) ═══════════ */
 .floor{
@@ -510,14 +519,14 @@ button{font-family:inherit;cursor:pointer}
 
 /* 화장실 */
 .restroom{border-color:#B7CBD4;background:linear-gradient(180deg,rgba(143,191,198,.08),transparent 40%),var(--room)}
-.restroom__body{display:flex;gap:6px;align-items:flex-end;padding:4px 2px}
+.restroom__body{display:flex;gap:7px;align-items:flex-end;padding:6px 3px}
 .stall{
-  flex:1;height:44px;background:#EAF0F3;border:2px solid #B7CBD4;border-radius:4px;
+  flex:1;height:60px;background:#DCE7EC;border:2px solid #93B0BC;border-radius:4px;
   display:flex;align-items:center;justify-content:center;
 }
-.stall i{width:12px;height:18px;background:#C9D6DD;border-radius:2px 2px 5px 5px}
-.sink{display:flex;flex-direction:column;gap:3px;width:26px}
-.sink span{height:9px;background:#DDE6EC;border:1px solid #B5C2CC;border-radius:3px 3px 6px 6px}
+.stall i{width:16px;height:26px;background:#A9C0CA;border-radius:3px 3px 7px 7px}
+.sink{display:flex;flex-direction:column;gap:4px;width:32px}
+.sink span{height:13px;background:#C9D9E0;border:1px solid #93B0BC;border-radius:3px 3px 8px 8px}
 
 .room2{
   background:var(--room);border:2px solid var(--line);border-radius:10px;

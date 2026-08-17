@@ -786,7 +786,7 @@ export function buildFloor(){
   const teamRooms = TEAMS.map(t => {
     const mem = STAFF.filter(s => s.t === t.id).sort(byRank);
     const rp = roomPos[t.id];
-    const slots = deskSlots(mem.length);
+    const slots = deskSlots(mem.length, rp.w);
     const leader = mem.find(s => s.rank === '팀장');
 
     const desks = mem.map((s, i) => {
@@ -919,10 +919,10 @@ export function fitPlan(){
   const floor = $('floor');
   if(!plan || !floor) return;
 
-  const padding = 20;
-  const availW = floor.clientWidth - padding;
-  // 화면 세로에서 도면 위(헤더·칩·컨트롤)를 뺀 만큼만 쓴다
-  const availH = window.innerHeight - floor.getBoundingClientRect().top - 28;
+  // 도면 영역이 실제로 쓸 수 있는 공간을 그대로 쓴다 (창 높이가 아니라 영역 높이)
+  const padding = 22;
+  const availW = floor.clientWidth  - padding;
+  const availH = floor.clientHeight - padding;
 
   const w = GRID.cols * T, h = GRID.rows * T;
   planScale = Math.min(availW / w, availH / h, 1);
