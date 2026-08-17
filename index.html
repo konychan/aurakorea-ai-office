@@ -37,14 +37,13 @@
   </div>
 </div>
 
-<div class="chipbar">
+<!-- 상태 칩과 조작 버튼을 한 줄로 합쳐 도면에 쓸 세로 공간을 확보한다 -->
+<div class="controls">
   <div class="chip work"><i></i>근무중 <b id="chipWork">0</b></div>
   <div class="chip busy"><i></i>처리중 <b id="chipBusy">0</b></div>
   <div class="chip wait"><i></i>보고대기 <b id="chipWait">0</b></div>
   <div class="chip off"><i></i>미출근 <b id="chipOff">0</b></div>
-</div>
-
-<div class="controls">
+  <span class="ctrlDiv"></span>
   <button class="btn mint" id="startBtn">하루 시작</button>
   <button class="btn" id="pauseBtn">일시정지</button>
   <div class="seg" id="speedSeg">

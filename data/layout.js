@@ -61,25 +61,25 @@ export const COMPANY = {
 
 /* ═══════════ 격자 ═══════════
    화면(가로가 긴 모니터)에 꽉 차도록 도면을 가로로 넓고 세로로 짧게 잡는다. */
-export const GRID = { tile: 18, cols: 75, rows: 55 };
+export const GRID = { tile: 18, cols: 78, rows: 48 };
 
 /* ═══════════ 중앙 복도 ═══════════
-   세로 복도가 도면 한가운데를 위아래로 관통하고, 각 방 앞에서 가로 통로가 갈라진다. */
+   세로 복도가 도면 한가운데를 위아래로 관통하고, 각 팀 행 위로 가로 통로가 갈라진다. */
 export const CORRIDOR = {
-  x: 29,            // 세로 복도 왼쪽 끝 col
+  x: 31,            // 세로 복도 왼쪽 끝 col
   w: 4,             // 복도 폭 (tile)
-  get cx(){ return this.x + this.w / 2; },   // 복도 중심선 = 31
+  get cx(){ return this.x + this.w / 2; },   // 복도 중심선 = 33
   top: 10,          // 복도가 시작되는 row (대표실 아래)
-  bottom: 48,       // 복도가 끝나는 row (정문 앞)
+  bottom: 44,       // 복도가 끝나는 row (정문 앞)
 };
 
 /* ═══════════ 상단 중앙 — 대표실 · 본부장실 · 미팅룸 ═══════════
    좌우 팀 룸 사이의 중앙 열에 세로로 쌓는다. 미팅룸은 본부장실 바로 아래에 붙인다. */
-export const CEO_ROOM   = { id:'ceo',     name:'대표실',   nameEn:'EXECUTIVE OFFICE', col:24, row:1,  w:15, h:9 };
-export const HQ_ROOM    = { id:'hq',      name:'본부장실', nameEn:'HQ OFFICE',        col:24, row:14, w:15, h:7 };
+export const CEO_ROOM   = { id:'ceo',     name:'대표실',   nameEn:'EXECUTIVE OFFICE', col:26, row:1,  w:15, h:9 };
+export const HQ_ROOM    = { id:'hq',      name:'본부장실', nameEn:'HQ OFFICE',        col:26, row:14, w:15, h:7 };
 export const MEETING_ROOM = {
   id:'meeting', name:'미팅룸', nameEn:'MEETING ROOM',
-  col:24, row:21, w:15, h:11,          // ← 본부장실(끝 row 21) 바로 아래에 붙는다
+  col:26, row:21, w:15, h:11,          // ← 본부장실(끝 row 21) 바로 아래에 붙는다
   seats: { head:{ who:'CEO', label:'대표' }, hq:{ who:'HQ_MANAGER', label:'본부장' } },
 };
 
@@ -92,71 +92,75 @@ export const CEO_QUEUE = Array.from({ length: 5 }, (_, i) => ({
 
 /* ═══════════ 좌우 팀 룸 ═══════════
    왼쪽 4개 / 오른쪽 4개. 팀이 늘어나면 아래 행에 자동으로 이어 붙는다. */
-/* 자리를 4열로 놓아 방을 가로로 넓히고 세로를 짧게 만든다 (4명까지 한 줄) */
-const TEAM_ROOM = { w:22, h:9, gapY:1, startRow:11 };
+/* 팀 룸은 좌우 구역에 각각 2열 × 2행으로 놓는다.
+   문은 방 위쪽에 내고, 각 행 위의 가로 통로를 통해 중앙 복도와 이어진다.
+   (그래서 바깥쪽 열 방도 다른 방을 통과하지 않고 복도까지 갈 수 있다) */
+const TEAM_ROOM = { w:11, h:15, gapX:1, gapY:3, startRow:12 };
 export const TEAM_SIDE = {
-  left:  { col: 1 },        // 복도 왼쪽 (중앙 방들과 겹치지 않는 위치)
-  right: { col: 40 },       // 복도 오른쪽
+  left:  { cols: [1, 13] },     // 왼쪽 구역 2열 (바깥 / 안쪽)
+  right: { cols: [42, 54] },    // 오른쪽 구역 2열 (안쪽 / 바깥)
 };
+/* 각 행 위에 놓이는 가로 통로의 중심 row */
+export const ROW_CORRIDORS = [
+  TEAM_ROOM.startRow - 1.5,
+  TEAM_ROOM.startRow + TEAM_ROOM.h + TEAM_ROOM.gapY - 1.5,
+];
 
 /* 인원수에 맞는 방 높이 — 자리는 2열로 놓이므로 줄 수만큼만 높이를 준다.
    (2명이면 1줄, 3~4명이면 2줄) 덕분에 도면 세로가 짧아져 한 화면에 잘 들어온다. */
 export function roomHeightFor(count){
-  const rows = Math.max(1, Math.ceil(count / 4));   // 자리는 4열로 놓인다
+  const rows = Math.max(1, Math.ceil(count / 2));   // 자리는 2열로 놓인다
   return Math.ceil(2.6 + rows * 5.4 + 0.6);         // 헤더 + 자리줄 + 여백
 }
 
-/* 팀 목록을 받아 좌우로 번갈아 배치한다.
+/* 팀 목록을 받아 좌우 구역에 2열 × 2행으로 배치한다.
    teams: [{ id, count }] — count 는 그 팀 인원수
-   door = 그 방에서 복도로 나오는 지점 (캐릭터는 반드시 이 문을 거친다) */
+   door = 방 위쪽 문 (그 행의 가로 통로 위치). 캐릭터는 반드시 이 문을 거친다. */
 export function layoutTeamRooms(teams){
   const pos = {};
-  const nextRow = { left: TEAM_ROOM.startRow, right: TEAM_ROOM.startRow };
-
   teams.forEach((t, i) => {
     const id = typeof t === 'string' ? t : t.id;
-    const count = typeof t === 'string' ? 4 : (t.count || 4);
     const side = i % 2 === 0 ? 'left' : 'right';
-    const h = roomHeightFor(count);
-    const col = TEAM_SIDE[side].col;
-    const row = nextRow[side];
-    nextRow[side] = row + h + TEAM_ROOM.gapY;
+    const idx = Math.floor(i / 2);                 // 그 구역에서 몇 번째 방인지
+    const colIdx = idx % 2;                        // 0=첫 열, 1=둘째 열
+    const rowIdx = Math.floor(idx / 2);            // 0=첫 행, 1=둘째 행
+
+    const col = TEAM_SIDE[side].cols[colIdx];
+    const row = TEAM_ROOM.startRow + rowIdx * (TEAM_ROOM.h + TEAM_ROOM.gapY);
 
     pos[id] = {
-      side, col, row, w: TEAM_ROOM.w, h,
-      // 문은 복도를 향한 쪽 벽면 중앙에 낸다
-      door: {
-        col: side === 'left' ? col + TEAM_ROOM.w : col,
-        row: row + h / 2,
-      },
+      side, col, row, w: TEAM_ROOM.w, h: TEAM_ROOM.h,
+      // 문은 방 위쪽 벽 중앙 → 그 행의 가로 통로로 바로 나온다
+      door: { col: col + TEAM_ROOM.w / 2, row: ROW_CORRIDORS[rowIdx] },
+      rowIdx,
     };
   });
   return pos;
 }
 
 /* ═══════════ 맨 오른쪽 — 휴게공간 · 화장실 ═══════════ */
-const FAR_RIGHT_COL = TEAM_SIDE.right.col + TEAM_ROOM.w + 2;   // = 64
+const FAR_RIGHT_COL = TEAM_SIDE.right.cols[1] + TEAM_ROOM.w + 2;   // = 67
 
 export const LOUNGE = {
   id:'lounge', name:'휴게 공간', nameEn:'LOUNGE',
-  col: FAR_RIGHT_COL, row: 11, w: 10, h: 12,
-  door: { col: FAR_RIGHT_COL, row: 17 },
+  col: FAR_RIGHT_COL, row: 12, w: 10, h: 14,
+  door: { col: FAR_RIGHT_COL + 5, row: ROW_CORRIDORS[0] },
   fixtures: ['커피머신', '정수기', '냉장고', '간식 진열대', '휴게 테이블', '쓰레기통'],
 };
 
 export const RESTROOM = {
   id:'restroom', name:'화장실', nameEn:'RESTROOM',
-  col: FAR_RIGHT_COL, row: 25, w: 10, h: 9,
-  door: { col: FAR_RIGHT_COL, row: 29 },
+  col: FAR_RIGHT_COL, row: 29, w: 10, h: 11,
+  door: { col: FAR_RIGHT_COL + 5, row: ROW_CORRIDORS[1] },
 };
 
 /* ═══════════ 정문 · 안내 ═══════════ */
 export const ENTRANCE = {
   label:'정문',
-  col: CORRIDOR.cx, row: GRID.rows - 6,   // 도면 하단에서 잘리지 않도록 여유를 둔다
+  col: CORRIDOR.cx, row: GRID.rows - 4,   // 팀 룸 아래, 도면 맨 아래에 둔다
   w: 10, h: 3,
 };
-export const RECEPTION = { col: CORRIDOR.cx - 18, row: GRID.rows - 8, w: 9, h: 3 };
+export const RECEPTION = { col: CORRIDOR.cx - 18, row: GRID.rows - 5, w: 9, h: 3 };
 
 /* ═══════════ 복도 웨이포인트 ═══════════
    길찾기 알고리즘을 쓰지 않는다. 아래 규칙으로 경로를 만든다:
@@ -186,8 +190,8 @@ export function buildPath(from, to){
 
 /* 방 안에서 직원 수만큼 책상이 놓일 상대 좌표 (방 원점 기준, 2열 정렬)
    방 크기(w:11, h:14)에 맞춰 자리 하나가 5 x 5.4 타일을 차지한다. */
-export function deskSlots(count, roomW = 22){
-  const originRow = 2.6, dw = 5, dh = 5.4, gap = 0.3, columns = 4;
+export function deskSlots(count, roomW = 11){
+  const originRow = 2.6, dw = 5, dh = 5.4, gap = 0.3, columns = 2;
   const out = [];
   for(let i = 0; i < count; i++){
     const rowIdx = Math.floor(i / columns);

@@ -69,10 +69,11 @@ button{font-family:inherit;cursor:pointer}
 
 /* ---------- top bar ---------- */
 .topbar{
-  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-  padding:10px 16px;background:var(--room);
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:6px 16px;background:var(--room);
   border-bottom:2px solid var(--line);
 }
+.ctrlDiv{width:1px;height:18px;background:var(--line);margin:0 4px}
 .brand{font-size:15px;letter-spacing:.5px}
 .brand b{color:var(--rose)}
 .tag{
@@ -81,10 +82,10 @@ button{font-family:inherit;cursor:pointer}
 }
 .clock{
   margin-left:auto;display:flex;align-items:center;gap:10px;
-  background:var(--console);color:#fff;border-radius:8px;padding:6px 12px;
+  background:var(--console);color:#fff;border-radius:8px;padding:4px 12px;
 }
-.clock .label{font-size:10px;color:var(--slate)}
-.clock .t{font-size:20px;letter-spacing:1px}
+.clock .label{font-size:9px;color:var(--slate)}
+.clock .t{font-size:17px;letter-spacing:1px}
 .clock .sim{font-size:10px;color:var(--cyan)}
 
 /* ---------- status chip bar ---------- */
@@ -105,12 +106,13 @@ button{font-family:inherit;cursor:pointer}
 .chip.wait i{background:var(--rose)}
 .chip.off i{background:var(--slate)}
 
-/* ---------- control bar ---------- */
+/* ---------- control bar (상태 칩 + 조작 버튼 통합) ---------- */
 .controls{
-  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-  padding:9px 16px;background:var(--floor-2);
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  padding:6px 16px;background:var(--floor-2);
   border-bottom:2px solid var(--line);
 }
+.controls .chip{padding:3px 9px;font-size:10px}
 .btn{
   border:2px solid var(--line);background:var(--room);color:var(--ink);
   border-radius:8px;padding:6px 11px;font-size:12px;
@@ -130,8 +132,9 @@ button{font-family:inherit;cursor:pointer}
    도면과 오른쪽 패널이 화면 한 장 안에 들어오게 하고,
    내용이 긴 오른쪽 패널만 내부에서 스크롤되게 한다. */
 .stage{
-  display:grid;grid-template-columns:1fr 340px;gap:14px;padding:14px 16px 16px;
-  height:calc(100vh - 174px);min-height:520px;
+  /* 넓은 화면에서는 오른쪽 패널도 함께 넓혀, 도면 옆에 빈 공간이 남지 않게 한다 */
+  display:grid;grid-template-columns:1fr minmax(340px, 26%);gap:14px;padding:12px 16px 14px;
+  height:calc(100vh - 103px);min-height:520px;
 }
 .side{overflow-y:auto;padding-right:4px}
 @media(max-width:940px){
@@ -174,10 +177,8 @@ button{font-family:inherit;cursor:pointer}
 }
 
 /* ── 방 문 (복도로 통하는 곳) ── */
-.room__door,.room__doorL,.room__doorB{position:absolute;background:#CFC3DA;border-radius:2px}
-.room__door {right:-3px;width:6px;height:38px}          /* 왼쪽 방: 오른쪽 벽에 문 */
-.side-right .room__door{right:auto;left:-3px}            /* 오른쪽 방: 왼쪽 벽에 문 */
-.room__doorL{left:-3px;width:6px;height:38px}            /* 맨 오른쪽 방: 왼쪽 벽 */
+.room__doorT,.room__doorB{position:absolute;background:#CFC3DA;border-radius:2px}
+.room__doorT{left:50%;top:-3px;transform:translateX(-50%);width:40px;height:6px}   /* 방 위쪽 벽 → 행 통로 */
 .room__doorB{left:50%;bottom:-3px;transform:translateX(-50%);width:44px;height:6px}
 
 /* ═══════════ 전신 캐릭터 (C 국면) ═══════════
@@ -713,7 +714,7 @@ button{font-family:inherit;cursor:pointer}
 .doorHeader .floorTag{font-size:8px;color:#B7A9D6;border:1px solid #6E6288;border-radius:999px;padding:0 5px}
 
 .doorFrame{
-  position:relative;width:100%;height:76px;display:flex;
+  position:relative;width:100%;height:56px;display:flex;
   border:3px solid #55476A;border-top:none;border-radius:0 0 4px 4px;
   background:linear-gradient(180deg, rgba(190,225,235,.35), rgba(150,200,215,.22));
   overflow:hidden;perspective:420px;

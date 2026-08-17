@@ -2,7 +2,7 @@ import { TEAMS } from '../data/teams.js';
 import { STAFF, RANKS, LEADER_OF } from '../data/staff.js';
 import { CEO, HQ_MANAGER, CEO_ROOM, HQ_ROOM, CEO_QUEUE, ENTRANCE, WORK_HOURS, SIM_WINDOW,
          COMPANY, MEETING_ROOM, LOUNGE, RESTROOM, RECEPTION,
-         GRID, CORRIDOR, layoutTeamRooms, deskSlots, buildPath,
+         GRID, CORRIDOR, ROW_CORRIDORS, layoutTeamRooms, deskSlots, buildPath,
          IDLE_ACTIVITIES, IDLE_MAX_CONCURRENT } from '../data/layout.js';
 import { character, vipCharacter } from './character.js';
 import { workDesk, nameplate, officeChair, MONITOR_STATE } from './furniture.js';
@@ -687,7 +687,7 @@ function meetingRoomHTML(){
 function loungeHTML(){
   return `<div class="room2 lounge room--fixed" id="lounge" style="${box(LOUNGE)}"
                data-col="${LOUNGE.col}" data-row="${LOUNGE.row}">
-    <div class="room__doorL" style="top:${(LOUNGE.door.row - LOUNGE.row)*T - T*0.9}px"></div>
+    <div class="room__doorT"></div>
     <div class="room2__label">
       <svg class="ico" viewBox="0 0 24 24"><path d="M5 8h11v7a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z" fill="none" stroke="#E9B93F" stroke-width="2"/><path d="M16 10h3a2 2 0 0 1 0 4h-3" fill="none" stroke="#E9B93F" stroke-width="2"/></svg>
       ${LOUNGE.name} <span class="en">${LOUNGE.nameEn}</span>
@@ -725,7 +725,7 @@ function loungeHTML(){
 function restroomHTML(){
   return `<div class="room2 restroom room--fixed" id="restroom" style="${box(RESTROOM)}"
                data-col="${RESTROOM.col}" data-row="${RESTROOM.row}">
-    <div class="room__doorL" style="top:${(RESTROOM.door.row - RESTROOM.row)*T - T*0.9}px"></div>
+    <div class="room__doorT"></div>
     <div class="room2__label">
       <svg class="ico" viewBox="0 0 24 24"><circle cx="8" cy="4.5" r="2" fill="#8FBFC6"/><path d="M5.5 9h5l1 6h-2v5h-3v-5h-2z" fill="#8FBFC6"/><circle cx="16.5" cy="4.5" r="2" fill="#C9A9D8"/><path d="M13.5 9h6l-1.5 6h-1v5h-2v-5h-1z" fill="#C9A9D8"/></svg>
       ${RESTROOM.name} <span class="en">${RESTROOM.nameEn}</span>
@@ -742,11 +742,13 @@ function restroomHTML(){
 function entranceHTML(){
   const e = ENTRANCE;
   const wallH = 2.2;
+  // 유리벽은 정문 좌우 짧은 구간에만 둔다 (팀 룸 위를 가로지르지 않게)
+  const wallSpan = 5;
   return `
-    <div class="glassWall left"  style="left:0;top:${(e.row-0.4)*T}px;width:${(e.col-e.w/2)*T}px;height:${wallH*T}px">
+    <div class="glassWall left"  style="left:${(e.col-e.w/2-wallSpan)*T}px;top:${(e.row-0.4)*T}px;width:${wallSpan*T}px;height:${wallH*T}px">
       <div class="wallLogo">${COMPANY.nameKo}</div>
     </div>
-    <div class="glassWall right" style="left:${(e.col+e.w/2)*T}px;top:${(e.row-0.4)*T}px;width:${(GRID.cols-(e.col+e.w/2))*T}px;height:${wallH*T}px"></div>
+    <div class="glassWall right" style="left:${(e.col+e.w/2)*T}px;top:${(e.row-0.4)*T}px;width:${wallSpan*T}px;height:${wallH*T}px"></div>
 
     <div class="reception" style="${box(RECEPTION)}">
       <div class="reception__desk"></div>
@@ -808,7 +810,7 @@ export function buildFloor(){
     return `<div class="room ${t.kind} side-${rp.side}" id="room-${t.id}"
                  style="${box(rp)};--accent:${t.accent}"
                  data-col="${rp.col}" data-row="${rp.row}">
-      <div class="room__door" style="top:${(rp.door.row - rp.row)*T - T*0.9}px"></div>
+      <div class="room__doorT"></div>
       <h3><span class="dot"></span>${t.name}<span class="kindTag">${t.kind==='region'?'지역':'기능'}</span></h3>
       <div class="sub">${t.sub} · ${mem.length}명${leader?` · 팀장 ${leader.n}`:''}</div>
       <div class="desks">${desks}</div>
@@ -832,14 +834,10 @@ export function buildFloor(){
       <div class="corridorV" id="corridor"
            style="left:${CORRIDOR.x*T}px;top:${CORRIDOR.top*T}px;
                   width:${CORRIDOR.w*T}px;height:${(CORRIDOR.bottom-CORRIDOR.top)*T}px"></div>
-      ${TEAMS.map(t => {
-        const rp = roomPos[t.id];
-        const left = rp.side === 'left' ? rp.col + rp.w : CORRIDOR.x + CORRIDOR.w;
-        const w = rp.side === 'left' ? CORRIDOR.x - (rp.col + rp.w) : rp.col - (CORRIDOR.x + CORRIDOR.w);
-        return `<div class="corridorH" style="left:${left*T}px;top:${(rp.door.row-0.9)*T}px;width:${w*T}px;height:${1.8*T}px"></div>`;
-      }).join('')}
-      <div class="corridorH" style="left:${(CORRIDOR.x+CORRIDOR.w)*T}px;top:${(LOUNGE.door.row-0.9)*T}px;width:${(LOUNGE.col-CORRIDOR.x-CORRIDOR.w)*T}px;height:${1.8*T}px"></div>
-      <div class="corridorH" style="left:${(CORRIDOR.x+CORRIDOR.w)*T}px;top:${(RESTROOM.door.row-0.9)*T}px;width:${(RESTROOM.col-CORRIDOR.x-CORRIDOR.w)*T}px;height:${1.8*T}px"></div>
+      <!-- 각 팀 행 위를 가로지르는 통로 — 바깥쪽 열 방도 여기로 나와 복도까지 간다 -->
+      ${ROW_CORRIDORS.map(r =>
+        `<div class="corridorH" style="left:0;top:${(r-0.9)*T}px;width:${GRID.cols*T}px;height:${1.8*T}px"></div>`
+      ).join('')}
 
       <!-- 대표실 -->
       <div class="ceoRoom room--fixed" style="${box(CEO_ROOM)}" data-col="${CEO_ROOM.col}" data-row="${CEO_ROOM.row}">
