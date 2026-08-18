@@ -85,9 +85,9 @@ function tick(){
       log(simMin, s.n, `출근. ${s.r} 업무 시작.`);
       arriveWalk(s.n, simMin);
     } else if(Math.random() < 0.02*speed){
-      const title = AGENDAS[s.t][Math.floor(Math.random()*AGENDAS[s.t].length)];
-      submitAgenda(s.n, title, simMin);
-      log(simMin, s.n, `"${title}" 결재 상신. 대표님 결재를 기다립니다.`);
+      const ag = AGENDAS[s.t][Math.floor(Math.random()*AGENDAS[s.t].length)];
+      submitAgenda(s.n, ag, simMin);
+      log(simMin, s.n, `"${ag.t}" 결재 상신. 대표님 결재를 기다립니다.`);
       if(track) focusRoom(s.t);
     } else if(CHAT_BY_SENDER[s.n] && simMin >= (st.nextChatAt||0) && Math.random() < 0.03*speed){
       const options = CHAT_BY_SENDER[s.n];
@@ -143,6 +143,8 @@ export function initSim(){
   };
   $('agendaQueue').onclick = e=>{
     const b = e.target.closest('button[data-act]'); if(!b) return;
+    // "내용 보기"는 결재가 아니다. 여기서 걸러내지 않으면 열어 보려다 반려되어 버린다.
+    if(b.dataset.act === 'see') return;
     resolveAgenda(+b.dataset.id, b.dataset.act==='approve', simMin);
   };
   setInterval(tick, 1000);

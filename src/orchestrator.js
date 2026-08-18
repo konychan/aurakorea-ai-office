@@ -170,9 +170,19 @@ export function renderReportQueue(){
         <span class="rq__no">${i + 1}</span>
         <span class="rq__who"><b>${escapeHtml(r.reporter)}</b> 팀장<br><i>${escapeHtml(teamName(r.team))}</i></span>
         <span class="rq__t">${escapeHtml(r.title)}</span>
-        <span class="rq__ok" title="본부장 검토 완료">검토됨</span>
+        <button class="rq__see" data-see="${r.id}">내용 보기</button>
       </div>`).join('')
     : `<div class="empty">대기 중인 보고가 없습니다.</div>`;
+
+  // 입장 전에도 미리 열어 보실 수 있게 한다
+  el.querySelectorAll('[data-see]').forEach(b => {
+    b.onclick = async () => {
+      const item = reportQueue.find(x => String(x.id) === b.dataset.see);
+      if(!item) return;
+      const { openReport } = await import('./viewer.js');
+      openReport(item);
+    };
+  });
 }
 
 function renderReportDetail(item){
@@ -201,6 +211,8 @@ function renderReportDetail(item){
       ${row('불확실', escapeHtml(item.uncertain))}
       ${row('대표님 결정 필요', escapeHtml(item.needsDecision))}
       <div class="rd__hq">✓ ${HQ_MANAGER.name} 본부장 검토 완료</div>
+      <!-- 결정하시기 전에 전체 내용을 열어 보고, 필요하면 파일로 받으실 수 있게 한다 -->
+      <button class="rd__see" id="rdSee">전체 내용 보기 · 파일 받기</button>
       <div class="rd__btns">
         <button data-dec="approve" class="ok">승인</button>
         <button data-dec="confirm">보고 확인</button>
@@ -209,6 +221,12 @@ function renderReportDetail(item){
         <button data-dec="reject" class="no">본부장 반려</button>
       </div>
     </div>`;
+
+  const see = $('rdSee');
+  if(see) see.onclick = async () => {
+    const { openReport } = await import('./viewer.js');
+    openReport(item);
+  };
 }
 
 export function initOrchestrator(getSimMin){

@@ -1104,6 +1104,93 @@ button{font-family:inherit;cursor:pointer}
   color:#5B3D8C;background:#EDE4F8;border:1px solid #C7AFEA;border-radius:7px;padding:0 5px;
 }
 
+/* ═══════ 보고서 뷰어 — 결정 전에 내용을 열어 보는 창 ═══════ */
+.vwModal{
+  position:fixed;inset:0;z-index:220;display:flex;align-items:center;justify-content:center;
+  background:rgba(30,22,42,.5);padding:20px;
+}
+.vwCard{
+  width:min(720px,100%);max-height:90vh;display:flex;flex-direction:column;
+  background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  box-shadow:0 22px 54px rgba(30,22,42,.34);
+}
+.vwHead{
+  display:flex;align-items:center;gap:8px;padding:13px 16px;
+  background:#123B34;color:#fff;flex:none;
+}
+.vwHead h4{margin:0;font-size:13px;font-weight:normal;letter-spacing:.4px}
+.vwX{
+  margin-left:auto;border:0;background:transparent;color:#9FD5CB;
+  font-size:21px;line-height:1;cursor:pointer;padding:0 2px;
+}
+.vwX:hover{color:#fff}
+.vwBody{padding:17px 18px;overflow-y:auto;flex:1}
+.vwFoot{
+  display:flex;align-items:center;gap:8px;padding:11px 16px;flex:none;
+  background:#FAF8F4;border-top:1px solid var(--line);
+}
+.vwNote{font-size:9px;color:var(--ink-2);margin-right:auto;line-height:1.5}
+.vwDown,.vwClose{font:inherit;font-size:11px;padding:7px 15px;border-radius:6px;cursor:pointer;flex:none}
+.vwDown{background:#123B34;color:#fff;border:1px solid #0B2B25}
+.vwDown:hover{background:#1C554A}
+.vwClose{background:#F1EDEA;color:var(--ink-2);border:1px solid var(--line)}
+
+.vwMeta{display:flex;flex-wrap:wrap;align-items:center;gap:9px;font-size:10px;color:var(--ink-2);margin-bottom:9px}
+.vwMeta b{color:var(--ink)}
+.vwOk{color:#0E5A3E;background:#D8F0E6;border-radius:8px;padding:1px 8px}
+.vwTitle{font-size:16px;color:var(--ink);line-height:1.5;padding-bottom:11px;border-bottom:2px solid #123B34}
+.vwH{font-size:10px;color:#1C554A;margin:16px 0 5px;letter-spacing:.3px}
+.vwP{font-size:11px;color:var(--ink);line-height:1.8}
+.vwSrc{margin:4px 0 0;padding-left:16px}
+.vwSrc li{font-size:10px;line-height:1.75}
+.vwSrc a{color:#1C554A}
+.vwWarn{
+  font-size:10px;line-height:1.7;color:#8A4A12;
+  background:#FDF0DC;border:1px solid #E8C48A;border-radius:6px;padding:8px 10px;
+}
+.vwAsk{
+  font-size:11px;line-height:1.7;color:#0E1A17;
+  background:#D8F0E6;border-left:4px solid #2FA8A0;border-radius:0 6px 6px 0;padding:9px 12px;
+}
+.vwHint{font-size:10px;color:var(--ink-2);line-height:1.65;margin-top:9px}
+
+/* 첨부 파일 */
+.vwFiles{display:flex;flex-direction:column;gap:6px;margin-top:5px}
+.vwFile{
+  display:flex;align-items:center;gap:9px;text-decoration:none;
+  border:1px solid var(--line);border-radius:7px;padding:8px 11px;background:#FDFCFB;
+}
+.vwFile:hover{border-color:#2FA8A0;background:#F4FBF9}
+.vwFile__ic{
+  font-size:8px;font-weight:700;color:#fff;background:#7A8A85;
+  border-radius:3px;padding:3px 6px;flex:none;
+}
+.vwFile.ppt .vwFile__ic{background:#C0562B}
+.vwFile.xls .vwFile__ic{background:#1D7044}
+.vwFile.doc .vwFile__ic{background:#2A5699}
+.vwFile__n{flex:1;font-size:10px;color:var(--ink);line-height:1.5}
+.vwFile__d{font-size:9px;color:#1C554A;flex:none}
+.vwFile.off{opacity:.55;cursor:default}
+.vwFile.off .vwFile__d{color:var(--ink-2)}
+
+/* 문서 미리보기 */
+.vwShots{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:11px 0 4px}
+.vwShots figure{margin:0}
+.vwShots img{width:100%;display:block;border:1px solid var(--line);border-radius:6px;background:#fff}
+.vwShots figcaption{font-size:9px;color:var(--ink-2);line-height:1.5;margin-top:4px}
+
+/* 목록·상세의 "내용 보기" 버튼 */
+.rq__see,.agenda__btns .see{
+  font:inherit;font-size:9px;padding:3px 8px;border-radius:5px;cursor:pointer;flex:none;
+  background:#EAF6F3;color:#0E5A3E;border:1px solid #A9DDD2;
+}
+.rq__see:hover,.agenda__btns .see:hover{background:#D8F0E6}
+.rd__see,.seeDocs{
+  display:block;width:100%;font:inherit;font-size:11px;padding:8px;margin:9px 0 8px;
+  border-radius:7px;cursor:pointer;background:#123B34;color:#fff;border:1px solid #0B2B25;
+}
+.rd__see:hover,.seeDocs:hover{background:#1C554A}
+
 /* ═══════ @ 자동완성 ═══════ */
 .mention{
   position:absolute;left:0;right:64px;bottom:calc(100% + 4px);z-index:60;

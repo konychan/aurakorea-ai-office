@@ -516,12 +516,14 @@ async function _chatWith(fromName, toName, ask, reply, simMin){
 export const agendaQueue = [];
 let agendaSeq = 1;
 
-export function submitAgenda(name, title, simMin){
+export function submitAgenda(name, agenda, simMin){
   const s = STAFF.find(x=>x.n===name);
-  const item = { id: agendaSeq++, name, team: s.t, title, simMin };
+  // 문자열로 넘어오던 예전 호출도 계속 동작하게 받아 준다
+  const a = typeof agenda === 'string' ? { t: agenda } : agenda;
+  const item = { id: agendaSeq++, name, team: s.t, title: a.t, why: a.why || '', point: a.point || '', simMin };
   agendaQueue.push(item);
   state[name].st = '보고대기';
-  state[name].bubble = title;
+  state[name].bubble = a.t;
   state[name].bt = simMin;
   renderAgenda();
   goReport(name, simMin);
@@ -553,11 +555,23 @@ function renderAgenda(){
         <div class="agenda__t"><b>${a.name}</b><span>${hhmm(a.simMin)}</span></div>
         <div class="agenda__m">${a.title}</div>
         <div class="agenda__btns">
+          <button class="see" data-act="see" data-id="${a.id}">내용 보기</button>
           <button class="ok" data-act="approve" data-id="${a.id}">승인</button>
           <button class="no" data-act="reject" data-id="${a.id}">반려</button>
         </div>
       </div>`).join('')
     : `<div class="empty">대기 중인 결재 안건이 없습니다.</div>`;
+
+  // 결재 전에 무슨 건인지 열어 보실 수 있게 한다
+  el.querySelectorAll('[data-act="see"]').forEach(b => {
+    b.onclick = async e => {
+      e.stopPropagation();
+      const item = agendaQueue.find(a => String(a.id) === b.dataset.id);
+      if(!item) return;
+      const { openAgenda } = await import('./viewer.js');
+      openAgenda(item);
+    };
+  });
 }
 
 /* ===================== 직원 아바타 ===================== */
@@ -1211,8 +1225,14 @@ async function renderDocPanel(){
   const { requestListHTML, bindRequestList } = await import('./docdesk.js');
   const box = $('docReq');
   if(box){
-    box.innerHTML = requestListHTML();
+    box.innerHTML = `<button class="seeDocs" id="seeDocs">만든 문서 열어 보기 · 파일 받기</button>`
+                  + requestListHTML();
     bindRequestList(box);
+    const btn = $('seeDocs');
+    if(btn) btn.onclick = async () => {
+      const { openDocuments } = await import('./viewer.js');
+      openDocuments();
+    };
   }
   renderPortfolio();
 }

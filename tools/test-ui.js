@@ -109,6 +109,96 @@ const check = (name, ok, detail = '') => {
     const pickTxt = await page.$eval('.dsPick .dsHint', el => el.textContent).catch(()=>'');
     check('태그를 뗀 내용만 넘어간다', pickTxt.includes('브랜드 소개서') && !pickTxt.includes('@'), pickTxt.trim());
 
+    /* 8. 결재·보고를 열어 보고 파일로 받을 수 있다 */
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => {
+      document.querySelectorAll('.vwModal,.dsModal').forEach(e => e.remove());
+      // 하루를 시작하고 속도를 올려 안건·보고가 실제로 쌓이게 한다
+      const speed = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === '4x');
+      const start = [...document.querySelectorAll('button')].find(b => /하루 시작/.test(b.textContent));
+      if(start) start.click();
+      if(speed) speed.click();
+    });
+
+    const waitFor = async (sel, ms = 40000) => {
+      const t0 = Date.now();
+      while(Date.now() - t0 < ms){
+        if(await page.$(sel)) return true;
+        await new Promise(r => setTimeout(r, 400));
+      }
+      return false;
+    };
+
+    // 결재 안건
+    const gotAgenda = await waitFor('#agendaQueue button[data-act="see"]');
+    check('결재 안건이 쌓인다', gotAgenda);
+    if(gotAgenda){
+      await page.click('#agendaQueue button[data-act="see"]');
+      await new Promise(r=>setTimeout(r,350));
+      const txt = await page.$eval('.vwCard', el => el.textContent).catch(()=>'');
+      check('결재 안건을 열어 볼 수 있다', txt.includes('어떤 건인지'), txt.slice(0,40).replace(/\s+/g,' '));
+      check('무엇을 정해야 하는지 보여준다', txt.includes('정해 주셔야 할 것'));
+      check('안건이 반려되지 않는다 (열어만 봤다)',
+        await page.$('#agendaQueue button[data-act="see"]') !== null);
+      check('안건 내려받기 버튼이 있다', await page.$('.vwDown') !== null);
+      await page.click('.vwClose');
+      await new Promise(r=>setTimeout(r,200));
+    }
+
+    // 보고 대기열
+    const gotReport = await waitFor('#reportQueue button[data-see]');
+    check('보고가 대기열에 쌓인다', gotReport);
+    if(gotReport){
+      await page.click('#reportQueue button[data-see]');
+      await new Promise(r=>setTimeout(r,350));
+      const txt = await page.$eval('.vwCard', el => el.textContent).catch(()=>'');
+      check('입장 전에도 보고를 열어 볼 수 있다', txt.includes('한 일과 결과'), txt.slice(0,40).replace(/\s+/g,' '));
+      check('본부장 검토 표시가 있다', txt.includes('본부장 검토 완료'));
+
+      // 실제로 내려받아지는지 확인한다
+      const dir = path.join(SHOT,'dl');
+      require('fs').mkdirSync(dir,{recursive:true});
+      const cdp = await page.createCDPSession();
+      await cdp.send('Page.setDownloadBehavior',{ behavior:'allow', downloadPath:dir });
+      await page.click('.vwDown');
+      let files = [];
+      for(let i=0;i<25;i++){
+        files = require('fs').readdirSync(dir).filter(f => f.endsWith('.html'));
+        if(files.length) break;
+        await new Promise(r=>setTimeout(r,250));
+      }
+      check('보고서가 파일로 내려받아진다', files.length > 0, files[0] || '받은 파일 없음');
+      if(files.length){
+        const body = require('fs').readFileSync(path.join(dir,files[0]),'utf8');
+        check('받은 파일에 내용이 들어 있다', body.includes('한 일과 결과') && body.includes('AURAKOREA'));
+      }
+      await page.click('.vwClose');
+    }
+
+    /* 9. 만든 문서 보기 + 실제 파일 링크 */
+    await page.evaluate(() => {
+      const d = [...document.querySelectorAll('.desk')].find(e => e.dataset.n === '강태오');
+      if(d) d.click();
+    });
+    await new Promise(r=>setTimeout(r,500));
+    const hasSeeDocs = await page.$('#seeDocs') !== null;
+    check('강태오 패널에 문서 보기 버튼이 있다', hasSeeDocs);
+    if(hasSeeDocs){
+      // 도면이 축소 변환돼 있어 좌표 클릭은 빗나갈 수 있다. 요소를 직접 누른다.
+      await page.evaluate(() => document.getElementById('seeDocs').click());
+      await waitFor('.vwFile[download]', 8000);
+      const links = await page.$$eval('.vwFile[download]', els => els.map(e => e.getAttribute('href')));
+      check('실제 문서 파일 링크가 있다', links.length >= 3, links.join(' '));
+      // 링크가 정말 살아 있는지 서버에 물어본다
+      const statuses = await page.evaluate(async urls => {
+        const out = [];
+        for(const u of urls){ try{ const r = await fetch(u,{method:'HEAD'}); out.push(r.status); }catch(e){ out.push(0); } }
+        return out;
+      }, links);
+      check('파일이 실제로 받아진다', links.length > 0 && statuses.every(s => s === 200), statuses.join(','));
+      await page.evaluate(() => document.querySelector('.vwClose')?.click());
+    }
+
     check('자바스크립트 오류 없음', jsErrors.length === 0, jsErrors[0] || '');
 
     await page.screenshot({ path: path.join(SHOT,'ui-test.png') });
