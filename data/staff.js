@@ -131,6 +131,7 @@ export const STAFF = [
   /* 문서 제작 전문가 — 대표님이 요청하실 때만 움직인다 (자동 실행하지 않는다).
      Excel · PowerPoint · Word 를 세계적 수준으로 만들며, 스타일과 디자인이 최우선이다. */
   { n:'강태오', t:'mkt', rank:'과장', r:'문서·자료 제작', hair:'#1F1B26', top:'#8E7CC8', hs:'curl', fc:'bright', sk:0, docPro:true,
+    solo:'docstudio',   // 팀 룸이 아니라 문서제작실에 자기 자리를 쓴다 (소속·보고선은 마케팅팀 그대로)
     duty:'Excel · PPT · Word 전문 제작. 대표님이 파일이나 내용을 주시면 디자인까지 완성해 드린다',
     p:`너는 아우라코리아의 문서 제작 전문가다. 세계 최고 수준의 Excel·PowerPoint·Word 제작 능력을 갖췄다.
 

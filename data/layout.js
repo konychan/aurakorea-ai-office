@@ -138,6 +138,18 @@ export function layoutTeamRooms(teams){
   return pos;
 }
 
+/* ═══════════ 왼쪽 위 — 문서제작실 ═══════════
+   Excel · PPT · Word 전담자는 팀 룸이 아니라 자기 작업실을 쓴다.
+   문서 작업은 큰 화면·프린터·색 견본이 필요하고, 누가 문서 담당인지 도면에서 바로 보여야 한다.
+   소속은 그대로 마케팅팀이다 (보고는 팀장 → 본부장 → 대표로 간다). 자리만 따로다. */
+export const DOC_STUDIO = {
+  id:'docstudio', name:'문서제작실', nameEn:'DOCUMENT STUDIO',
+  // 가로로 넓게 잡는다 — 견본 벽 · 작업 자리 · 프린터가 한 줄로 놓여야 서로 겹치지 않는다
+  col: 4, row: 2, w: 17, h: 8,
+  door: { col: 12.5, row: ROW_CORRIDORS[0] },   // 문은 아래쪽 벽 → 첫 행 가로 통로로 나온다
+  owner: '강태오',
+};
+
 /* ═══════════ 맨 오른쪽 — 휴게공간 · 화장실 ═══════════ */
 const FAR_RIGHT_COL = TEAM_SIDE.right.cols[1] + TEAM_ROOM.w + 2;   // = 67
 
@@ -160,7 +172,9 @@ export const ENTRANCE = {
   col: CORRIDOR.cx, row: GRID.rows - 4,   // 팀 룸 아래, 도면 맨 아래에 둔다
   w: 10, h: 3,
 };
-export const RECEPTION = { col: CORRIDOR.cx - 18, row: GRID.rows - 5, w: 9, h: 3 };
+/* 안내데스크는 팀 룸 아래 빈 줄에 둔다.
+   예전 좌표(row 43)는 왼쪽 안쪽 팀 룸(row 30~45) 위에 겹쳐 있어 직원 자리를 덮고 있었다. */
+export const RECEPTION = { col: 14, row: 45.4, w: 9, h: 2.4 };
 
 /* ═══════════ 복도 웨이포인트 ═══════════
    길찾기 알고리즘을 쓰지 않는다. 아래 규칙으로 경로를 만든다:

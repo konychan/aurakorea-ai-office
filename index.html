@@ -82,7 +82,7 @@
         <button data-q="컨테이너 적입 스케줄 확인">선적 스케줄</button>
       </div>
       <div class="row">
-        <input id="cmd" placeholder="대표 지시를 입력하세요 (예: 화성 창고 재고 확인)">
+        <input id="cmd" placeholder="대표 지시를 입력하세요 (@를 치면 직원을 고를 수 있습니다)">
         <button class="send" id="sendBtn">지시</button>
       </div>
       <div class="out" id="out">대표님 지시를 기다리는 중입니다.
@@ -138,6 +138,7 @@
   import { initConsole } from './src/console.js';
   import { initOrchestrator } from './src/orchestrator.js';
   import { initMeeting, callMeeting, endMeeting } from './src/meeting.js';
+  import { initDocDesk } from './src/docdesk.js';
   import { SIM_WINDOW } from './data/layout.js';
 
   function startApp(){
@@ -148,6 +149,7 @@
     initConsole();
     initOrchestrator(getSimMin);
     initMeeting(getSimMin);
+    initDocDesk();          // 문서제작실 요청 버튼 (PPT · Excel · Word)
     // 도면 위(미팅룸 옆) 회의 소집 버튼
     bindFloorMeetingButtons({
       'call-region': () => callMeeting({ scope:'region', title:'지역팀장 회의' }, getSimMin()),

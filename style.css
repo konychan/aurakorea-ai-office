@@ -396,7 +396,8 @@ button{font-family:inherit;cursor:pointer}
 .hqRoom__label .en{color:#8C7FAD;font-size:7px;letter-spacing:1px}
 .hqRoom__present{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:10px;color:#C9E8D8}
 .hqRoom__present i{width:6px;height:6px;border-radius:50%;background:var(--mint);animation:pulse 1.6s infinite}
-.hqRoom__scene{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+/* wrap 이면 상태줄이 아래로 떨어져 방 밖으로 잘려 나간다. 방은 가로로 넉넉하니 한 줄로 둔다. */
+.hqRoom__scene{display:flex;align-items:flex-end;gap:14px;flex-wrap:nowrap}
 .hqRoom__deskWrap{position:relative}
 .hqRoom__nameplate{
   position:absolute;left:50%;bottom:-13px;transform:translateX(-50%);
@@ -404,8 +405,11 @@ button{font-family:inherit;cursor:pointer}
   z-index:3;
 }
 .hqRoom__info{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
-.hqRoom__status{font-size:10px;color:#B7A9D6}
-.hqRoom__status b{color:#F0E6FF;font-weight:normal;background:#4A4166;padding:2px 8px;border-radius:999px}
+.hqRoom__status{
+  font-size:9px;color:#B7A9D6;margin-bottom:8px;line-height:1.8;
+  white-space:nowrap;   /* 알약 라벨이 두 줄로 쪼개지면 글자가 잘려 보인다 */
+}
+.hqRoom__status b{color:#F0E6FF;font-weight:normal;background:#4A4166;padding:2px 7px;border-radius:999px}
 .hqRoom__chain{
   display:flex;align-items:center;gap:5px;flex-wrap:wrap;
   font-size:10px;color:#B7A9D6;
@@ -678,8 +682,9 @@ button{font-family:inherit;cursor:pointer}
   pointer-events:none;
 }
 .wallLogo{
-  position:absolute;right:14px;top:50%;transform:translateY(-50%);
-  font-size:11px;color:#4E7C8C;letter-spacing:2px;opacity:.75;
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  font-size:9px;color:#4E7C8C;letter-spacing:.6px;opacity:.75;
+  white-space:nowrap;   /* 유리벽이 짧아서 그냥 두면 "아우 라코 리아"로 세 줄이 된다 */
 }
 
 .reception{
@@ -1021,6 +1026,179 @@ button{font-family:inherit;cursor:pointer}
 .realResult b{display:flex;justify-content:space-between;font-size:10px;color:var(--mint);margin-bottom:5px}
 .realResult b span{color:var(--ink-2);font-weight:normal}
 .realResult div{font-size:10px;line-height:1.6;color:var(--ink)}
+/* ═══════ 문서제작실 — 팀 룸과 확실히 구분되는 단독 작업실 ═══════
+   보라 계열 + 굵은 테두리로 "여기는 다른 곳"임을 한눈에 알게 한다. */
+.docStudio{
+  background:linear-gradient(160deg,#F3EDFB 0%,#EDE4F8 100%);
+  border:2px solid #B69CE8;
+  box-shadow:inset 0 0 0 1px #fff, 0 2px 0 rgba(122,90,170,.18);
+}
+.docStudio .room2__label{color:#5B3D8C}
+.docStudio .roomState{
+  margin-left:auto;font-size:8px;padding:1px 6px;border-radius:8px;
+  background:#E2D4F5;color:#5B3D8C;border:1px solid #C7AFEA;
+}
+.docStudio .roomState.busy{background:#5B3D8C;color:#fff;border-color:#5B3D8C}
+
+/* 견본 벽 · 작업 자리 · 프린터를 한 줄로 놓는다 — 좁은 방에서 겹치지 않게 하는 유일한 방법이다 */
+.ds__body{
+  position:absolute;left:8px;right:8px;top:24px;bottom:6px;
+  display:flex;align-items:flex-end;justify-content:space-between;gap:8px;
+}
+
+/* 왼쪽 벽면: 만든 문서 견본 3종 + 브랜드 색 견본 (이 방이 무슨 방인지 말해 준다) */
+.ds__wall{display:flex;flex-direction:column;align-items:flex-start;gap:3px;flex:none}
+.ds__spec{
+  width:26px;height:20px;border-radius:2px;background:#fff;border:1px solid #C7AFEA;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 0 rgba(91,61,140,.15);
+}
+.ds__spec i{font-style:normal;font-size:7px;font-weight:700;letter-spacing:.2px}
+.ds__spec.ppt{border-left:4px solid #C0562B} .ds__spec.ppt i{color:#C0562B}
+.ds__spec.xls{border-left:4px solid #1D7044} .ds__spec.xls i{color:#1D7044}
+.ds__spec.doc{border-left:4px solid #2A5699} .ds__spec.doc i{color:#2A5699}
+.ds__swatch{display:flex;gap:2px;margin-top:2px}
+.ds__swatch b{width:5px;height:12px;border-radius:1px;border:1px solid rgba(0,0,0,.15)}
+
+/* 가운데 작업 자리 */
+.docStudio .docDesk{position:relative;left:auto;top:auto;margin:0;flex:none}
+.ds__plate{
+  margin-top:3px;text-align:center;background:#5B3D8C;color:#fff;
+  border-radius:4px;padding:2px 7px;box-shadow:0 1px 0 rgba(0,0,0,.2);white-space:nowrap;
+}
+.ds__plate b{display:block;font-size:9px;letter-spacing:.3px}
+.ds__plate span{display:block;font-size:7px;opacity:.85;margin-top:1px}
+
+/* 오른쪽 프린터 */
+.ds__printer{width:30px;text-align:center;flex:none;margin-bottom:2px}
+.pr__body{height:13px;border-radius:2px;background:#4A3A55;border:1px solid #33283C}
+.pr__paper{
+  width:18px;height:10px;margin:-1px auto 0;background:#fff;border:1px solid #C7AFEA;border-radius:1px;
+}
+.ds__printer span{display:block;font-size:6px;color:#6E5A88;margin-top:2px}
+
+/* 대기 중인 제작 요청 — 라벨 아래 오른쪽에 쌓는다 (자리·프린터와 겹치지 않는 자리) */
+.ds__queue{
+  position:absolute;right:8px;top:24px;display:flex;flex-direction:column;gap:2px;max-width:44%;
+}
+.dsReq{
+  display:flex;align-items:center;gap:3px;font-size:7px;line-height:1.3;
+  background:#fff;border:1px solid #C7AFEA;border-left:3px solid #8E7CC8;
+  border-radius:3px;padding:2px 4px;color:#3E2A5C;
+}
+.dsReq b{font-size:6px;padding:0 3px;border-radius:2px;color:#fff;background:#8E7CC8}
+.dsReq.ppt b{background:#C0562B} .dsReq.xls b{background:#1D7044} .dsReq.doc b{background:#2A5699}
+
+/* 요청 버튼 (방 바로 아래) */
+.dsButtons{position:absolute;display:flex;gap:4px;justify-content:center;z-index:6}
+.dsBtn{
+  font:inherit;font-size:9px;padding:3px 8px;border-radius:5px;cursor:pointer;
+  background:#5B3D8C;color:#fff;border:1px solid #462E6E;box-shadow:0 1px 0 rgba(0,0,0,.2);
+}
+.dsBtn:hover{background:#6D4BA6}
+.dsBtn:active{transform:translateY(1px)}
+
+/* 팀 룸에 "단독 작업실 상주" 표시 */
+.soloNote{
+  display:inline-block;font-style:normal;margin-left:5px;font-size:8px;
+  color:#5B3D8C;background:#EDE4F8;border:1px solid #C7AFEA;border-radius:7px;padding:0 5px;
+}
+
+/* ═══════ @ 자동완성 ═══════ */
+.mention{
+  position:absolute;left:0;right:64px;bottom:calc(100% + 4px);z-index:60;
+  background:#fff;border:1px solid var(--line);border-radius:7px;overflow:hidden;
+  box-shadow:0 6px 18px rgba(60,40,80,.18);max-height:190px;overflow-y:auto;
+}
+.mItem{
+  display:flex;align-items:baseline;gap:6px;padding:5px 9px;cursor:pointer;
+  border-bottom:1px solid #F1EAF4;
+}
+.mItem:last-child{border-bottom:0}
+.mItem.on,.mItem:hover{background:#F3EDFB}
+.mItem b{font-size:11px;color:var(--ink)}
+.mItem span{font-size:9px;color:var(--ink-2)}
+.mTag{
+  margin-left:auto;font-style:normal;font-size:8px;color:#5B3D8C;
+  background:#EDE4F8;border:1px solid #C7AFEA;border-radius:7px;padding:0 5px;
+}
+
+/* ═══════ 문서 요청 창 ═══════ */
+.dsModal{
+  position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;
+  background:rgba(40,26,58,.45);padding:16px;
+}
+.dsCard{
+  width:min(460px,100%);max-height:88vh;overflow-y:auto;
+  background:#fff;border:1px solid #C7AFEA;border-radius:11px;padding:15px 16px 14px;
+  box-shadow:0 18px 44px rgba(40,26,58,.3);
+}
+.dsCard h4{
+  margin:0 0 3px;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:7px;
+}
+.dsX{
+  margin-left:auto;border:0;background:transparent;font-size:19px;line-height:1;
+  color:var(--ink-2);cursor:pointer;padding:0 2px;
+}
+.dsX:hover{color:var(--ink)}
+.dsCard__tag{
+  font-size:8px;font-weight:700;color:#fff;background:#8E7CC8;border-radius:3px;padding:2px 5px;
+}
+.dsCard__tag.ppt{background:#C0562B} .dsCard__tag.xls{background:#1D7044} .dsCard__tag.doc{background:#2A5699}
+.dsHint{margin:0 0 11px;font-size:10px;color:var(--ink-2);line-height:1.6}
+.dsCard label{display:block;font-size:10px;color:var(--ink-2);margin-bottom:9px}
+.dsCard label span{color:#C0562B}
+.dsCard input,.dsCard textarea{
+  display:block;width:100%;margin-top:3px;font:inherit;font-size:11px;color:var(--ink);
+  border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:#FDFCFE;
+  box-sizing:border-box;resize:vertical;
+}
+.dsCard input:focus,.dsCard textarea:focus{outline:0;border-color:#8E7CC8;background:#fff}
+.dsCard input.need{border-color:#C0562B;background:#FDF2EE}
+.dsRow{display:flex;gap:9px}
+.dsRow label{flex:1}
+.dsActions{display:flex;justify-content:flex-end;gap:7px;margin-top:4px}
+.dsCancel,.dsOk{font:inherit;font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer}
+.dsCancel{background:#F4F0F7;color:var(--ink-2);border:1px solid var(--line)}
+.dsOk{background:#5B3D8C;color:#fff;border:1px solid #462E6E}
+.dsOk:hover{background:#6D4BA6}
+
+/* 형식 고르기 */
+.dsPickRow{display:flex;gap:8px}
+.dsPickBtn{
+  flex:1;font:inherit;text-align:left;cursor:pointer;padding:10px;border-radius:8px;
+  background:#FDFCFE;border:1px solid var(--line);
+}
+.dsPickBtn:hover{border-color:#8E7CC8;background:#F7F3FC}
+.dsPickBtn b{display:inline-block;font-size:8px;color:#fff;border-radius:3px;padding:2px 5px}
+.dsPickBtn.ppt b{background:#C0562B} .dsPickBtn.xls b{background:#1D7044} .dsPickBtn.doc b{background:#2A5699}
+.dsPickBtn i{display:block;font-style:normal;font-size:11px;color:var(--ink);margin:5px 0 3px}
+.dsPickBtn em{display:block;font-style:normal;font-size:9px;color:var(--ink-2);line-height:1.5}
+
+/* 작업지시서 */
+.dsOrder{
+  margin:0 0 11px;font-size:10px;line-height:1.65;color:var(--ink);white-space:pre-wrap;
+  background:#FAF8FC;border:1px solid var(--line);border-radius:7px;padding:10px 11px;
+  max-height:40vh;overflow-y:auto;font-family:inherit;
+}
+
+/* 상세 패널의 요청 목록 */
+.dsList{margin-top:10px;padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:#FBFAFD}
+.dsList>b{display:block;font-size:10px;color:var(--ink);margin-bottom:7px}
+.dsList>b span{color:var(--ink-2);font-weight:normal}
+.dsListItem{display:flex;align-items:center;gap:6px;padding:5px 0;border-top:1px solid #F1EAF4}
+.dsListItem:first-of-type{border-top:0}
+.dsListTag{font-size:7px;color:#fff;background:#8E7CC8;border-radius:3px;padding:2px 4px;flex:none}
+.dsListTag.ppt{background:#C0562B} .dsListTag.xls{background:#1D7044} .dsListTag.doc{background:#2A5699}
+.dsListItem>div{flex:1;min-width:0}
+.dsListItem i{display:block;font-style:normal;font-size:10px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dsListItem em{display:block;font-style:normal;font-size:8px;color:var(--ink-2);margin-top:1px}
+.dsListBtn{
+  font:inherit;font-size:9px;padding:3px 7px;border-radius:5px;cursor:pointer;flex:none;
+  background:#F4F0F7;color:#5B3D8C;border:1px solid #C7AFEA;
+}
+.dsListBtn:hover{background:#EDE4F8}
+
 /* 문서 제작 담당 포트폴리오 — 실제로 만든 문서의 미리보기 */
 .folio{
   margin-top:10px;padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:#FBFAF7;

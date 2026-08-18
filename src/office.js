@@ -1,7 +1,7 @@
 import { TEAMS } from '../data/teams.js';
 import { STAFF, RANKS, LEADER_OF } from '../data/staff.js';
 import { CEO, HQ_MANAGER, CEO_ROOM, HQ_ROOM, CEO_QUEUE, ENTRANCE, WORK_HOURS, SIM_WINDOW,
-         COMPANY, MEETING_ROOM, LOUNGE, RESTROOM, RECEPTION,
+         COMPANY, MEETING_ROOM, LOUNGE, RESTROOM, RECEPTION, DOC_STUDIO,
          GRID, CORRIDOR, ROW_CORRIDORS, layoutTeamRooms, deskSlots, buildPath,
          IDLE_ACTIVITIES, IDLE_MAX_CONCURRENT } from '../data/layout.js';
 import { character, vipCharacter } from './character.js';
@@ -721,6 +721,103 @@ function loungeHTML(){
   </div>`;
 }
 
+/* 문서제작실 — Excel · PPT · Word 전담자의 단독 작업실.
+   팀 룸과 확실히 다르게 보여야 한다: 보라색 계열, 큰 작업용 모니터 2대, 프린터,
+   벽에 붙은 문서 견본 3종(PPT/XLS/DOC), 색 견본. 이름표를 크게 달아 누구인지 바로 보이게 한다. */
+function docStudioHTML(){
+  const s = STAFF.find(x => x.n === DOC_STUDIO.owner);
+  if(!s) return '';
+  return `<div class="room2 docStudio room--fixed" id="docStudio" style="${box(DOC_STUDIO)}"
+               data-col="${DOC_STUDIO.col}" data-row="${DOC_STUDIO.row}">
+    <div class="room__doorB" title="문서제작실 문"></div>
+    <div class="room2__label">
+      <svg class="ico" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="#B69CE8" stroke-width="2"/><path d="M14 3v4h4" fill="none" stroke="#B69CE8" stroke-width="2"/><path d="M9 12h6M9 16h6" stroke="#B69CE8" stroke-width="2"/></svg>
+      ${DOC_STUDIO.name} <span class="en">${DOC_STUDIO.nameEn}</span>
+      <span class="roomState idle" id="docState">대기</span>
+    </div>
+
+    <div class="ds__body">
+      <!-- 벽면: 만든 문서 견본 3종 + 색 견본 -->
+      <div class="ds__wall">
+        <div class="ds__spec ppt"><i>PPT</i></div>
+        <div class="ds__spec xls"><i>XLS</i></div>
+        <div class="ds__spec doc"><i>DOC</i></div>
+        <div class="ds__swatch"><b style="background:#123B34"></b><b style="background:#2FA8A0"></b><b style="background:#C8A45C"></b><b style="background:#FAF8F4"></b></div>
+      </div>
+
+      <!-- 작업 자리: 듀얼 모니터 책상 + 캐릭터 -->
+      <div class="desk docDesk" data-n="${s.n}" data-st="미출근">
+        <span class="led"></span>
+        <div class="seat">
+          <div class="seat__chair">${officeChair(true)}</div>
+          <div class="seat__person">${avatar(s)}</div>
+          <!-- 다른 자리와 좌표계(112×62)를 똑같이 맞춘다. 어긋나면 캐릭터가 책상 위에 뜬다.
+               구분은 '듀얼 모니터 + 색 견본 + 태블릿'으로 준다 — 디자인 작업 자리답게. -->
+          <div class="seat__desk">
+            <svg class="deskSvg" viewBox="0 0 112 62" width="112" height="62">
+              <ellipse cx="56" cy="58" rx="46" ry="4" fill="rgba(0,0,0,.18)"/>
+              <!-- 듀얼 모니터 -->
+              <g class="monitor">
+                <rect x="6" y="-1" width="30" height="21" rx="2" fill="#2A2430"/>
+                <rect x="8" y="1" width="26" height="17" rx="1" fill="#8E7CC8" opacity=".9"/>
+                <path d="M11 5h20M11 8h14M11 11h17" stroke="#F3EDFB" stroke-width="1.1" opacity=".8"/>
+                <rect x="18" y="20" width="6" height="3" fill="#3A3444"/>
+                <rect x="40" y="1" width="30" height="19" rx="2" fill="#2A2430"/>
+                <rect x="42" y="3" width="26" height="15" rx="1" fill="#123B34"/>
+                <rect x="44" y="5" width="10" height="11" fill="#2FA8A0" opacity=".85"/>
+                <rect x="56" y="9" width="10" height="7" fill="#C8A45C" opacity=".8"/>
+                <rect x="52" y="20" width="6" height="3" fill="#3A3444"/>
+              </g>
+              <!-- 색 견본 카드 -->
+              <g class="papers">
+                <rect x="76" y="6" width="13" height="14" rx=".8" fill="#FDFCFA" transform="rotate(-5 82 13)"/>
+                <rect x="78" y="8" width="3" height="10" fill="#123B34" transform="rotate(-5 82 13)"/>
+                <rect x="82" y="8" width="3" height="10" fill="#2FA8A0" transform="rotate(-5 82 13)"/>
+                <rect x="86" y="8" width="2.6" height="10" fill="#C8A45C" transform="rotate(-5 82 13)"/>
+              </g>
+              <!-- 상판 -->
+              <path d="M10 20h92l6 10H4z" fill="#7D6690"/>
+              <path d="M4 30h104v5H4z" fill="#4A3A55"/>
+              <path d="M4 35h104v1.6H4z" fill="#33283C" opacity=".5"/>
+              <!-- 상판 위: 키보드 + 펜 태블릿 -->
+              <g class="keyboard">
+                <path d="M28 22h34l3 6H25z" fill="#E4DEEA"/>
+                <path d="M29.4 23.6h31l1.4 3H28z" fill="#F7F4F9"/>
+              </g>
+              <g class="memo">
+                <rect x="72" y="22" width="17" height="7" rx="1" fill="#EDE4F8"/>
+                <rect x="74" y="23.4" width="13" height="4.2" rx=".6" fill="#fff"/>
+                <path d="M92 22.6l4 5.4" stroke="#5B3D8C" stroke-width="1.4" stroke-linecap="round"/>
+              </g>
+              <!-- 다리 -->
+              <rect x="10" y="36" width="5" height="18" fill="#33283C"/>
+              <rect x="97" y="36" width="5" height="18" fill="#33283C"/>
+            </svg>
+          </div>
+        </div>
+        <div class="ds__plate"><b>${s.n}</b><span>${s.rank} · ${s.r}</span></div>
+      </div>
+
+      <!-- 프린터 + 출력물 -->
+      <div class="ds__printer" title="프린터">
+        <div class="pr__body"></div>
+        <div class="pr__paper"></div>
+        <span>프린터</span>
+      </div>
+    </div>
+
+    <!-- 대기 중인 제작 요청 -->
+    <div class="ds__queue" id="docQueue"></div>
+  </div>
+
+  <!-- 문서제작실 아래: 대표님이 바로 누르는 요청 버튼 -->
+  <div class="dsButtons" style="left:${DOC_STUDIO.col*T}px;top:${(DOC_STUDIO.row + DOC_STUDIO.h + 0.35)*T}px;width:${DOC_STUDIO.w*T}px">
+    <button class="dsBtn" data-doc="PPT">PPT 요청</button>
+    <button class="dsBtn" data-doc="Excel">Excel 요청</button>
+    <button class="dsBtn" data-doc="Word">Word 요청</button>
+  </div>`;
+}
+
 // 화장실 (맨 오른쪽, 휴게공간 아래)
 function restroomHTML(){
   return `<div class="room2 restroom room--fixed" id="restroom" style="${box(RESTROOM)}"
@@ -743,11 +840,11 @@ function entranceHTML(){
   const e = ENTRANCE;
   const wallH = 2.2;
   // 유리벽은 정문 좌우 짧은 구간에만 둔다 (팀 룸 위를 가로지르지 않게)
-  const wallSpan = 5;
+  const wallSpan = 4;   // 5 이면 왼쪽 벽이 안쪽 팀 룸(col 24까지)을 1칸 파고든다
   return `
-    <div class="glassWall left"  style="left:${(e.col-e.w/2-wallSpan)*T}px;top:${(e.row-0.4)*T}px;width:${wallSpan*T}px;height:${wallH*T}px">
-      <div class="wallLogo">${COMPANY.nameKo}</div>
-    </div>
+    <!-- 유리벽에 회사명을 넣었더니 벽이 짧아 글자가 잘려 나갔다.
+         정문 간판에 이미 AURAKOREA 가 크게 있으므로 벽은 유리만 둔다. -->
+    <div class="glassWall left"  style="left:${(e.col-e.w/2-wallSpan)*T}px;top:${(e.row-0.4)*T}px;width:${wallSpan*T}px;height:${wallH*T}px"></div>
     <div class="glassWall right" style="left:${(e.col+e.w/2)*T}px;top:${(e.row-0.4)*T}px;width:${wallSpan*T}px;height:${wallH*T}px"></div>
 
     <div class="reception" style="${box(RECEPTION)}">
@@ -780,13 +877,16 @@ const box = r => `left:${r.col*T}px;top:${r.row*T}px;width:${r.w*T}px;height:${r
 export function buildFloor(){
   const byRank = (a,b) => RANKS.indexOf(a.rank) - RANKS.indexOf(b.rank);
   // 방 높이를 인원수에 맞춰 잡는다 (도면 세로를 줄여 한 화면에 들어오게 한다)
+  // 단독 작업실을 쓰는 직원(강태오)은 팀 룸 자리 계산에서 뺀다 — 소속은 그대로다
+  const inRoom = t => STAFF.filter(s => s.t === t && !s.solo);
   const roomPos = layoutTeamRooms(
-    TEAMS.map(t => ({ id: t.id, count: STAFF.filter(s => s.t === t.id).length }))
+    TEAMS.map(t => ({ id: t.id, count: inRoom(t.id).length }))
   );
 
   /* ── 팀 룸 ── */
   const teamRooms = TEAMS.map(t => {
-    const mem = STAFF.filter(s => s.t === t.id).sort(byRank);
+    const mem = inRoom(t.id).sort(byRank);
+    const away = STAFF.filter(s => s.t === t.id && s.solo);
     const rp = roomPos[t.id];
     const slots = deskSlots(mem.length, rp.w);
     const leader = mem.find(s => s.rank === '팀장');
@@ -812,10 +912,22 @@ export function buildFloor(){
                  data-col="${rp.col}" data-row="${rp.row}">
       <div class="room__doorT"></div>
       <h3><span class="dot"></span>${t.name}<span class="kindTag">${t.kind==='region'?'지역':'기능'}</span></h3>
-      <div class="sub">${t.sub} · ${mem.length}명${leader?` · 팀장 ${leader.n}`:''}</div>
+      <div class="sub">${t.sub} · ${mem.length + away.length}명${leader?` · 팀장 ${leader.n}`:''}${
+        away.length ? `<em class="soloNote">${away.map(a=>a.n).join('·')} 문서제작실 상주</em>` : ''}</div>
       <div class="desks">${desks}</div>
     </div>`;
   }).join('');
+
+  /* ── 단독 작업실 자리 좌표 ──
+     문서제작실 자리는 CSS 흐름으로 그려지므로, 이동 목적지로 쓸 절대 좌표는 여기서 정한다. */
+  STAFF.filter(s => s.solo === 'docstudio').forEach(s => {
+    deskPos[s.n] = {
+      col: DOC_STUDIO.col + DOC_STUDIO.w / 2,
+      row: DOC_STUDIO.row + DOC_STUDIO.h - 2.6,
+      door: DOC_STUDIO.door,
+      team: s.t,
+    };
+  });
 
   /* ── 보고 대기줄: 바닥 발자국 표시 ── */
   const queueMarks = CEO_QUEUE.map(q => `
@@ -886,6 +998,9 @@ export function buildFloor(){
 
       <!-- 팀 룸 -->
       ${teamRooms}
+
+      <!-- 왼쪽 위: 문서제작실 (Excel · PPT · Word 전담) -->
+      ${docStudioHTML()}
 
       <!-- 맨 오른쪽: 휴게공간 · 화장실 -->
       ${loungeHTML()}
@@ -1079,10 +1194,27 @@ export function select(name, simMin = lastSimMin){
     <div class="duty">${s.duty}</div>
     <button class="go" id="goBtn">이 직원에게 직접 지시</button>
     ${realBlock}
-    ${s.docPro ? '<div id="folio"></div>' : ''}`;
-  $('goBtn').onclick = ()=>{ $('cmd').focus(); $('cmd').placeholder = `${s.n}에게 지시…`; };
-  if(s.docPro) renderPortfolio();
+    ${s.docPro ? `<div id="docReq"></div><div id="folio"></div>` : ''}`;
+  // 지시창에 @이름을 미리 넣어 둔다 — 누구에게 시키는지 헷갈리지 않게 한다
+  $('goBtn').onclick = ()=>{
+    const cmd = $('cmd');
+    cmd.value = `@${s.n} `;
+    cmd.focus();
+    cmd.placeholder = `${s.n}에게 지시…`;
+  };
+  if(s.docPro) renderDocPanel();
   paint(simMin);
+}
+
+/* 문서 제작 담당 전용 패널 — 대표님 요청 목록 + 지금까지 만든 문서 */
+async function renderDocPanel(){
+  const { requestListHTML, bindRequestList } = await import('./docdesk.js');
+  const box = $('docReq');
+  if(box){
+    box.innerHTML = requestListHTML();
+    bindRequestList(box);
+  }
+  renderPortfolio();
 }
 
 /* 문서 제작 담당의 실제 산출물. 만든 문서를 그대로 렌더한 미리보기를 보여준다.
