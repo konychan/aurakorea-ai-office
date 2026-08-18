@@ -1,0 +1,38 @@
+{
+  "owner": "강태오",
+  "updatedAt": "2026-08-18T14:00:00+09:00",
+  "note": "실제로 만든 파일입니다. 미리보기는 만든 문서를 그대로 렌더한 이미지입니다. 원본 파일은 tools/docgen/out/ 에 있습니다.",
+  "items": [
+    {
+      "title": "2026 하반기 3대 수출시장 브리핑",
+      "type": "PowerPoint",
+      "pages": "6장",
+      "file": "tools/docgen/out/2026-하반기-3대-수출시장-브리핑.pptx",
+      "summary": "표지 · 한 장 요약 · 지역별 3장 · 대표님 결정사항. 도넛 차트와 규제 타임라인 포함.",
+      "shots": [
+        { "src": "assets/docs/brief-cover.png",    "cap": "표지 — 결론 숫자 3개를 표지에서 먼저 보여준다" },
+        { "src": "assets/docs/brief-summary.png",  "cap": "한 장 요약 — 세 시장을 방어·집중·선점으로 갈랐다" },
+        { "src": "assets/docs/brief-region.png",   "cap": "지역 상세 — 규제 캘린더를 타임라인으로" },
+        { "src": "assets/docs/brief-decision.png", "cap": "마지막 장 — 대표님이 결정하실 세 가지" }
+      ]
+    },
+    {
+      "title": "3대 수출시장 비교표",
+      "type": "Excel",
+      "pages": "2시트",
+      "file": "tools/docgen/out/3대-수출시장-비교표.xlsx",
+      "summary": "시장 비교 + 규제 캘린더. 점유율·성장률은 0~100% 눈금 고정 데이터 막대로 크기를 그대로 보이게 했다.",
+      "shots": [
+        { "src": "assets/docs/market-xlsx.png", "cap": "시장 비교 시트 — 세로 괘선을 지우고 가로선만 남겼다" }
+      ]
+    },
+    {
+      "title": "2026 하반기 3대 수출시장 브리핑 (문서판)",
+      "type": "Word",
+      "pages": "5쪽",
+      "file": "tools/docgen/out/2026-하반기-3대-수출시장-브리핑.docx",
+      "summary": "표지 · 요약 · 지역별 본문 · 출처. 인쇄해서 바이어에게 그대로 드려도 되는 조판.",
+      "shots": []
+    }
+  ]
+}

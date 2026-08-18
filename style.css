@@ -1021,6 +1021,46 @@ button{font-family:inherit;cursor:pointer}
 .realResult b{display:flex;justify-content:space-between;font-size:10px;color:var(--mint);margin-bottom:5px}
 .realResult b span{color:var(--ink-2);font-weight:normal}
 .realResult div{font-size:10px;line-height:1.6;color:var(--ink)}
+/* 문서 제작 담당 포트폴리오 — 실제로 만든 문서의 미리보기 */
+.folio{
+  margin-top:10px;padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:#FBFAF7;
+}
+.folio>b{display:block;font-size:10px;color:var(--ink);margin-bottom:7px}
+.folio>b span{color:var(--ink-2);font-weight:normal}
+.folioItem{padding:7px 0;border-top:1px solid var(--line)}
+.folioItem:first-of-type{border-top:0;padding-top:0}
+.fiHead{font-size:10px;color:var(--ink);line-height:1.5}
+.fiHead i{font-style:normal;color:var(--ink-2);font-size:9px;margin-left:5px}
+.fiType{
+  display:inline-block;font-size:8px;padding:1px 5px;border-radius:3px;margin-right:5px;
+  color:#fff;background:var(--ink-2);vertical-align:1px;
+}
+.fiType.tPowerPoint{background:#C0562B}
+.fiType.tExcel{background:#1D7044}
+.fiType.tWord{background:#2A5699}
+.fiSum{font-size:9px;color:var(--ink-2);line-height:1.6;margin:3px 0 6px}
+.fiShots{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.fiShots figure{margin:0}
+.fiShots img{
+  width:100%;display:block;border:1px solid var(--line);border-radius:4px;background:#fff;
+}
+.fiShots figcaption{font-size:8px;color:var(--ink-2);line-height:1.45;margin-top:3px}
+.fiPath{font-size:8px;color:var(--ink-2);opacity:.75;margin-top:6px;word-break:break-all}
+
+/* 시장조사 보고서 — 핵심 먼저, 상세는 아래 */
+.rrHead{
+  font-size:10px;color:#0E5A3E;background:#D8F0E6;border-left:3px solid var(--mint);
+  border-radius:0 5px 5px 0;padding:5px 7px;margin-bottom:6px;line-height:1.5;font-weight:normal;
+}
+.rrKey{margin-bottom:6px}
+.rrKey i{display:block;font-style:normal;font-size:9px;color:var(--ink-2);margin-bottom:2px}
+.rrKey ul{margin:0;padding-left:14px}
+.rrKey li{font-size:9px;color:var(--ink);line-height:1.6;margin-bottom:1px}
+.rrWarn{
+  margin-top:6px;font-size:9px;line-height:1.55;color:#8A4A12;
+  background:#FDF0DC;border:1px solid #E8C48A;border-radius:5px;padding:5px 7px;
+}
+.rrWarn i{display:block;font-style:normal;color:#B5651D;margin-bottom:2px}
 .realResult .sources{margin:7px 0 0;padding-left:14px;font-size:9px}
 .realResult .sources a{color:var(--rose)}
 .realResult .note{margin-top:7px;font-size:9px;color:var(--ink-2);font-style:italic}

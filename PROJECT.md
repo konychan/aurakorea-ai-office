@@ -374,3 +374,26 @@
   - 컴퓨터가 꺼져 있어도 동작한다 (클라우드 실행)
 - 실행 검증 완료: 1차 실행은 GitHub 쓰기 권한 부족으로 403 실패 → Claude GitHub 앱(https://github.com/apps/claude) 설치 후 2차 실행에서 커밋·푸시·배포까지 성공 확인
 - 이 방식은 대표님의 기존 Claude 플랜을 사용하므로 Anthropic API 크레딧 충전이 필요 없다
+
+## 현재 상태 (시장조사 3인 + 문서제작 담당 추가)
+
+### 지역별 시장조사 담당
+- 아르헨티나 **박세렌**(과장), 스페인·EU **윤도아**(과장), GCC **최이든**(과장) — 셋 다 `real:true` 실제 리서치 담당
+- 보고서 구조 확장: `headline`(한 줄 결론) / `keyPoints`(핵심 정리) / `watchOut`(주의) / `text` / `sources`
+- 데이터는 `data/agent-results.json` 한 곳. 자리를 클릭하면 상세 패널에 그대로 뜬다
+- 보고 경로는 그대로다: 담당 → 팀장 검증 → 본부장 검토 → 대표 보고 대기열
+
+### 문서 제작 담당 (강태오, 마케팅팀 과장)
+- 실제 `.pptx` / `.xlsx` / `.docx` 파일을 만든다. 흉내가 아니라 진짜 파일이다
+- 도구: `tools/docgen/` (pptxgenjs · exceljs · docx). 디자인 기준선은 `tools/docgen/brand.js` 한 곳
+- **만들고 → 렌더해서 → 눈으로 보고 → 고친다.** 검수 없이 납품하지 않는다
+  - pptx·xlsx → `tools/docgen/render.ps1` (설치된 Office COM)
+  - docx → LibreOffice 헤드리스 (Word COM 은 대표님이 Word 를 열어두시면 멈춘다)
+  - PDF → PNG → `tools/docgen/pdf2png.js`
+- 작업 지침은 `.claude/skills/document-studio/SKILL.md` 에 스킬로 설치돼 있다
+- 만든 문서 목록은 `data/doc-portfolio.json`, 미리보기는 `assets/docs/`. 강태오 자리를 클릭하면 보인다
+- 산출물 원본: `tools/docgen/out/`
+
+### 아직 안 한 것 (대표님 승인 필요)
+- 클라우드 자동 스케줄러는 여전히 **유래인 1명**만 매일 갱신한다.
+  시장조사 3명까지 넓히면 하루 1회 → 4회로 늘어나 대표님 Claude 플랜 사용량이 늘어난다. 지시를 기다린다.

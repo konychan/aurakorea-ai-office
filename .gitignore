@@ -2,3 +2,6 @@
 node_modules/
 
 .vercel
+
+# 문서 검수용 렌더 이미지 — 납품물이 아니라 눈으로 확인하려고 뽑은 중간 산출물이다
+tools/docgen/out/_preview/

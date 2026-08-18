@@ -27,24 +27,33 @@ export async function runRealAgent(name, simMin){
   paint(simMin);
   log(simMin, name, '실제 웹 검색 리서치 결과를 확인하고 있습니다.');
 
-  st.lastReal = { text: item.text, sources: item.sources || [], note: item.note || '', at: item.updatedAt };
+  st.lastReal = {
+    headline: item.headline || '',
+    text: item.text,
+    keyPoints: item.keyPoints || [],
+    watchOut: item.watchOut || '',
+    sources: item.sources || [],
+    note: item.note || '',
+    at: item.updatedAt,
+  };
   st.bubble = '실시간 리서치 완료';
   st.done++;
   st.runningReal = false;
   st.st = '근무중';
   st.bt = simMin;
-  log(simMin, name, '실시간 브랜드 후보 조사 확인 완료. 자리를 클릭하면 결과를 볼 수 있습니다.');
+  log(simMin, name, `${s.r} 조사 완료. 자리를 클릭하면 보고서를 볼 수 있습니다.`);
   paint(simMin);
 
   // 실제 리서치 결과도 팀장 검증 → 본부장 검토를 거쳐 대표 보고 대기열에 오른다 (헌장 14항)
   submitForReview({
     name,
-    title: '실시간 K뷰티 브랜드 리서치',
-    result: item.text,
+    title: s.r,
+    result: (item.headline ? `【핵심】 ${item.headline}\n\n` : '') + item.text
+          + (item.keyPoints?.length ? '\n\n' + item.keyPoints.map(k => `· ${k}`).join('\n') : ''),
     sources: item.sources || [],
     files: ['data/agent-results.json'],
     tests: '실제 웹 검색 결과에 근거 (출처 첨부)',
-    uncertain: '시장 수치는 기사 시점 기준',
-    needsDecision: '소싱 후보로 진행할지 대표님 판단 필요',
+    uncertain: item.watchOut || '시장 수치는 기사 시점 기준',
+    needsDecision: '대응 여부와 우선순위 판단 필요',
   }, simMin);
 }

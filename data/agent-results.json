@@ -8,5 +8,64 @@
     ],
     "updatedAt": "2026-08-18T10:00:00+09:00",
     "note": "Claude 클라우드 스케줄러가 자동으로 갱신한 결과입니다."
+  },
+
+  "박세렌": {
+    "headline": "K뷰티 점유율은 1.2%로 아직 작지만 성장률 90%대 — 지금이 선점 시기",
+    "text": "아르헨티나 화장품 수입시장은 프랑스·브라질·미국 상위 3개국이 약 60%를 차지하고 있습니다. 한국은 전체 수입의 약 1.2%로 아직 작지만 전년 대비 90% 이상 성장했고, 10대 후반~30대 초반 여성층의 한류 관심이 수요를 밀어올리고 있습니다. 규제는 ANMAT 사전 등록이 필수이고 원료·성분까지 개별 승인을 거쳐야 합니다. 2025년 6월 ANMAT 제4059/2025호 지침으로 화장품 광고 규제 체계가 새로 도입돼 표현의 투명성·정확성 요건이 강화됐습니다.",
+    "keyPoints": [
+      "한국 점유율 1.2%지만 성장률 90%+ — 경쟁 밀도가 낮은 선점 구간",
+      "상위 3개국(프랑스·브라질·미국)이 60% 과점 — 가격보다 차별화로 진입",
+      "ANMAT 사전 등록 필수, 원료·성분 개별 승인까지 소요기간 확보 필요",
+      "2025년 6월 광고 규제 신설 — 효능 표현 문구를 사전 점검해야 함"
+    ],
+    "watchOut": "광고 규제(제4059/2025호)로 기존 마케팅 문구가 걸릴 수 있습니다. 현지 진출 전 카피 검수를 권합니다.",
+    "sources": [
+      { "title": "아르헨티나 화장품 시장동향 - KOTRA 해외경제정보드림", "url": "https://dream.kotra.or.kr/dream/cms/news/actionKotraBoardDetail.do?SITE_NO=2&MENU_ID=3530&CONTENTS_NO=1&bbsGbn=254&bbsSn=254&pNttSn=199276" },
+      { "title": "아르헨티나 화장품 시장동향 - 대한화장품협회", "url": "https://kcia.or.kr/home/industry/industry_01.php?type=view&no=16385&ss=page%3D1" },
+      { "title": "2025년 글로벌 화장품 규제 정리 - REACH24H", "url": "https://www.reach24h.com/ko/news/company-news/2025-global-cosmetic.html" }
+    ],
+    "updatedAt": "2026-08-18T09:00:00+09:00",
+    "note": "아르헨티나 시장조사 담당이 실제 웹 검색으로 조사한 결과입니다."
+  },
+
+  "윤도아": {
+    "headline": "EU 수입 화장품 점유율 1위(21.7%) — 그러나 2026년 규제 대개편이 최대 변수",
+    "text": "한국은 EU 수입 화장품 시장 점유율 1위(21.7%)에 올랐고, 대EU 수출은 2013년 이후 꾸준히 늘어 5위 수출국이 됐습니다. 스페인에서는 코트라와 롯데홈쇼핑이 '2026 대한민국 브랜드 엑스포 in 남유럽'을 열어 체험형 마케팅으로 소비자와 바이어를 동시에 공략하고 있습니다. 다만 2026년 규제 개편이 실무상 가장 큰 부담입니다. 7월부터 최신 INCI 성분 사전이 강제 적용되고 향료 알레르겐 82종 표기가 확대돼 패키지 전면 수정이나 원료 대체가 필요할 수 있습니다. 8월 12일부터는 포장재 규정(PPWR)이 적용돼 PFAS·중금속 제한과 추적성 요건이 의무화됩니다.",
+    "keyPoints": [
+      "EU 수입 화장품 점유율 1위 21.7% — 이미 최대 공급국 지위",
+      "스페인이 남유럽 진출 교두보로 부상 (코트라·롯데 엑스포 개최)",
+      "2026년 7월 INCI 사전 강제 + 향료 알레르겐 82종 표기 확대 → 라벨 전면 재작업 가능성",
+      "2026년 8월 12일 PPWR 시행 → PFAS·중금속 제한, 포장 추적성 의무",
+      "CPNP 등록 + PIF(기술문서) 사전 준비 필수"
+    ],
+    "watchOut": "라벨·포장 규제가 두 건 연달아 시행됩니다. 기존 재고 패키지가 8월 이후 유통 불가해질 수 있어 재고 소진 계획을 미리 잡아야 합니다.",
+    "sources": [
+      { "title": "EU, 2026년 화장품 규제 대개편… K-뷰티 '성분·라벨·공급망' 전면 대응 비상 - 플라넷뉴스", "url": "http://www.plastics.kr/news/articleView.html?idxno=1757" },
+      { "title": "K-뷰티 열풍 스페인까지…코트라·롯데, 남유럽 판로 넓힌다 - 헤럴드경제", "url": "https://biz.heraldcorp.com/article/10759816" },
+      { "title": "EU, 수입화장품 규제준수 강화...CPNP와 PIF 대행사 선정 시 주의점 - 팜뉴스", "url": "https://www.pharmnews.com/news/articleView.html?idxno=243196" }
+    ],
+    "updatedAt": "2026-08-18T09:00:00+09:00",
+    "note": "스페인·EU 시장조사 담당이 실제 웹 검색으로 조사한 결과입니다."
+  },
+
+  "최이든": {
+    "headline": "사우디·UAE가 GCC K뷰티 수요의 75%+ — 할랄은 의무 아니지만 채널 진입에 유리",
+    "text": "GCC 뷰티·퍼스널케어 시장은 2028년 115억 달러 규모로 커질 전망이며, 사우디가 52%를 차지하고 UAE는 연평균 4.5% 성장 중입니다. 사우디와 UAE 두 나라가 GCC K뷰티 수요의 75% 이상을 차지합니다. 할랄 화장품 시장은 연 15% 성장세이고, GCC 소비자의 80%가 할랄 인증 제품에 더 지불할 의향이 있다고 답했습니다. 다만 화장품 할랄 인증은 법적 의무가 아니며, 일부 채널에서 수용도를 높이는 수단입니다. UAE는 인증 시 국가 할랄 마크 사용을 요구하고, 인증기관은 MOIAT가 인정한 곳이어야 합니다. COSRX·ANUA·조선미녀·이즈앤트리 등 주요 K뷰티 브랜드는 돼지 유래 성분과 금지 알코올을 쓰지 않아 할랄 기준에 대체로 부합합니다. 화장품 등록은 의무이며 UAE 승인에 4~8주가 걸립니다.",
+    "keyPoints": [
+      "사우디 52% + UAE — 두 나라가 GCC K뷰티 수요의 75% 이상",
+      "할랄 인증은 법적 의무 아님 — 다만 소비자 80%가 프리미엄 지불 의향",
+      "UAE 인증 시 MOIAT 인정 기관 + 국가 할랄 마크 필수",
+      "주요 K뷰티 브랜드는 이미 할랄 기준에 대체로 부합 (돼지 유래·금지 알코올 미사용)",
+      "화장품 등록은 의무, UAE 승인 소요 4~8주"
+    ],
+    "watchOut": "할랄 인증을 '필수'로 오해해 비용을 과다 집행하지 않도록 주의가 필요합니다. 진입 채널이 요구하는지 먼저 확인하고 결정하는 편이 낫습니다.",
+    "sources": [
+      { "title": "Middle East K-Beauty Opportunity: Halal Certification & Demand - KNOK Global", "url": "https://knokglobal.com/blog/middle-east-k-beauty-halal-certification-demand" },
+      { "title": "GCC Beauty Industry: 2026 Verified Stats - WifiTalents", "url": "https://wifitalents.com/gcc-beauty-industry-statistics/" },
+      { "title": "Halal Certification for Export to UAE, Saudi Arabia, and GCC - AHF", "url": "https://halalfoundation.org/halal-certification-for-export-to-uae-saudi-arabia-and-gcc-mena-countries/" }
+    ],
+    "updatedAt": "2026-08-18T09:00:00+09:00",
+    "note": "GCC 시장조사 담당이 실제 웹 검색으로 조사한 결과입니다."
   }
 }

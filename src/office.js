@@ -1055,12 +1055,17 @@ export function log(simMin, who, msg){
 export function select(name, simMin = lastSimMin){
   selected = name;
   const s = STAFF.find(x=>x.n===name), st = state[name];
-  const realBlock = st.lastReal ? `
+  const R = st.lastReal;
+  const realBlock = R ? `
     <div class="realResult">
-      <b>실시간 리서치 결과 <span>${new Date(st.lastReal.at).toLocaleString('ko-KR')}</span></b>
-      <div>${escapeHtml(st.lastReal.text).replace(/\n/g,'<br>')}</div>
-      ${st.lastReal.sources && st.lastReal.sources.length ? `<ul class="sources">${st.lastReal.sources.map(src=>`<li><a href="${escapeHtml(src.url)}" target="_blank" rel="noopener">${escapeHtml(src.title)}</a></li>`).join('')}</ul>` : ''}
-      ${st.lastReal.note ? `<div class="note">${escapeHtml(st.lastReal.note)}</div>` : ''}
+      <b>시장조사 보고 <span>${new Date(R.at).toLocaleString('ko-KR')}</span></b>
+      ${R.headline ? `<div class="rrHead">${escapeHtml(R.headline)}</div>` : ''}
+      ${R.keyPoints?.length ? `<div class="rrKey"><i>핵심 포인트</i><ul>${
+        R.keyPoints.map(k=>`<li>${escapeHtml(k)}</li>`).join('')}</ul></div>` : ''}
+      <div>${escapeHtml(R.text).replace(/\n/g,'<br>')}</div>
+      ${R.watchOut ? `<div class="rrWarn"><i>주의</i>${escapeHtml(R.watchOut)}</div>` : ''}
+      ${R.sources?.length ? `<ul class="sources">${R.sources.map(src=>`<li><a href="${escapeHtml(src.url)}" target="_blank" rel="noopener">${escapeHtml(src.title)}</a></li>`).join('')}</ul>` : ''}
+      ${R.note ? `<div class="note">${escapeHtml(R.note)}</div>` : ''}
     </div>` : '';
   const leaderName = LEADER_OF[s.t];
   $('detail').innerHTML = `
@@ -1073,9 +1078,40 @@ export function select(name, simMin = lastSimMin){
     <div class="kv"><span>오늘 처리</span><span>${st.done}건</span></div>
     <div class="duty">${s.duty}</div>
     <button class="go" id="goBtn">이 직원에게 직접 지시</button>
-    ${realBlock}`;
+    ${realBlock}
+    ${s.docPro ? '<div id="folio"></div>' : ''}`;
   $('goBtn').onclick = ()=>{ $('cmd').focus(); $('cmd').placeholder = `${s.n}에게 지시…`; };
+  if(s.docPro) renderPortfolio();
   paint(simMin);
+}
+
+/* 문서 제작 담당의 실제 산출물. 만든 문서를 그대로 렌더한 미리보기를 보여준다.
+   AI를 호출하지 않는다 — 이미 만들어 둔 파일 목록을 읽어올 뿐이다. */
+let folioCache = null;
+async function renderPortfolio(){
+  const box = $('folio');
+  if(!box) return;
+  if(!folioCache){
+    try{
+      const res = await fetch('/data/doc-portfolio.json', { cache:'no-store' });
+      folioCache = await res.json();
+    }catch(e){ return; }
+  }
+  if(!$('folio')) return;   // 그 사이 다른 직원을 클릭했으면 그리지 않는다
+  const f = folioCache;
+  $('folio').innerHTML = `
+    <div class="folio">
+      <b>제작한 문서 <span>${f.items.length}건</span></b>
+      ${f.items.map(it=>`
+        <div class="folioItem">
+          <div class="fiHead"><span class="fiType t${it.type}">${it.type}</span>${escapeHtml(it.title)}<i>${escapeHtml(it.pages)}</i></div>
+          <div class="fiSum">${escapeHtml(it.summary)}</div>
+          ${it.shots.length ? `<div class="fiShots">${it.shots.map(sh=>`
+            <figure><img src="${escapeHtml(sh.src)}" alt="${escapeHtml(sh.cap)}" loading="lazy"><figcaption>${escapeHtml(sh.cap)}</figcaption></figure>`).join('')}</div>` : ''}
+          <div class="fiPath">${escapeHtml(it.file)}</div>
+        </div>`).join('')}
+      <div class="note">${escapeHtml(f.note)}</div>
+    </div>`;
 }
 
 /* ═══════════════════════════════════════════════════════════════
