@@ -78,3 +78,22 @@ if (p.angle) {
 
 fs.unlinkSync(src);   // 조각 파일은 커밋되면 안 된다
 console.log(`반영 완료: ${p.name} (${kst})`);
+
+/* --push : 커밋·푸시까지 여기서 끝낸다.
+   클라우드 실행 환경은 detached HEAD 로 체크아웃되기 때문에 `git push origin master` 가 거절된다.
+   담당이 그때마다 헤매면 그 시행착오가 전부 토큰이다. 정답 절차를 여기 박아 둔다. */
+if (process.argv.includes('--push')) {
+  const { execFileSync } = require('child_process');
+  const git = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8', stdio: 'pipe' });
+  try {
+    git('add', 'data/');                              // data/ 밖은 절대 커밋하지 않는다
+    git('commit', '-m', `시장조사 자동 갱신: ${p.name} (${kst.slice(0, 10)})`);
+    git('fetch', 'origin', 'master');
+    git('rebase', 'origin/master');                   // 그 사이 올라온 원격 커밋 위로 얹는다
+    git('push', 'origin', 'HEAD:master');             // detached HEAD 에서도 통하는 형태
+    console.log('커밋·푸시 완료');
+  } catch (e) {
+    console.error('git 처리 실패 — ' + (e.stderr || e.stdout || e.message).toString().trim());
+    process.exit(1);
+  }
+}
