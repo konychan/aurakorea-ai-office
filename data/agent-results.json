@@ -2,14 +2,22 @@
   "유래인": {
     "text": "이번엔 스페인·남유럽 시장을 조사했습니다. 코트라는 롯데홈쇼핑과 함께 지난 5월 마드리드에서 '2026 대한민국 브랜드 엑스포 in 남유럽'을 열어 스페인을 거점으로 포르투갈·그리스 등 남유럽과 북아프리카까지 판로를 넓히고 있습니다. 6월엔 'K-EXPO SPAIN 2026'에 인천 뷰티기업 8곳이 참가해 이틀간 81건, 325만 유로(약 56억원) 규모의 수출상담을 성사시켰습니다. 최근 3년간 한국 화장품의 대(對)EU 수출은 2억8천만 달러에서 11억3천만 달러로 4배(305%) 폭증했고, 세포라·두글라스 같은 대형 유통망도 한국관을 찾고 있습니다. GCC에 이어 남유럽이 새로운 K뷰티 격전지로 떠오르는 만큼, 스페인 유통 파트너 발굴도 검토할 만합니다.",
     "sources": [
-      { "title": "K-뷰티 열풍 스페인까지…코트라·롯데, 남유럽 판로 넓힌다 - 헤럴드경제", "url": "https://biz.heraldcorp.com/article/10759816" },
-      { "title": "인천시, 스페인 K-EXPO서 56억 수출상담…뷰티기업 유럽 판로 모색 - 베타뉴스", "url": "https://www.betanews.net/article/view/beta202606200012" },
-      { "title": "K-뷰티, EU 수출 3년 새 4배… 유럽 시장 급부상 - 디지털타임스", "url": "https://www.dt.co.kr/article/12054469" }
+      {
+        "title": "K-뷰티 열풍 스페인까지…코트라·롯데, 남유럽 판로 넓힌다 - 헤럴드경제",
+        "url": "https://biz.heraldcorp.com/article/10759816"
+      },
+      {
+        "title": "인천시, 스페인 K-EXPO서 56억 수출상담…뷰티기업 유럽 판로 모색 - 베타뉴스",
+        "url": "https://www.betanews.net/article/view/beta202606200012"
+      },
+      {
+        "title": "K-뷰티, EU 수출 3년 새 4배… 유럽 시장 급부상 - 디지털타임스",
+        "url": "https://www.dt.co.kr/article/12054469"
+      }
     ],
     "updatedAt": "2026-08-18T10:00:00+09:00",
     "note": "Claude 클라우드 스케줄러가 자동으로 갱신한 결과입니다."
   },
-
   "박세렌": {
     "headline": "K뷰티 점유율은 1.2%로 아직 작지만 성장률 90%대 — 지금이 선점 시기",
     "text": "아르헨티나 화장품 수입시장은 프랑스·브라질·미국 상위 3개국이 약 60%를 차지하고 있습니다. 한국은 전체 수입의 약 1.2%로 아직 작지만 전년 대비 90% 이상 성장했고, 10대 후반~30대 초반 여성층의 한류 관심이 수요를 밀어올리고 있습니다. 규제는 ANMAT 사전 등록이 필수이고 원료·성분까지 개별 승인을 거쳐야 합니다. 2025년 6월 ANMAT 제4059/2025호 지침으로 화장품 광고 규제 체계가 새로 도입돼 표현의 투명성·정확성 요건이 강화됐습니다.",
@@ -21,34 +29,48 @@
     ],
     "watchOut": "광고 규제(제4059/2025호)로 기존 마케팅 문구가 걸릴 수 있습니다. 현지 진출 전 카피 검수를 권합니다.",
     "sources": [
-      { "title": "아르헨티나 화장품 시장동향 - KOTRA 해외경제정보드림", "url": "https://dream.kotra.or.kr/dream/cms/news/actionKotraBoardDetail.do?SITE_NO=2&MENU_ID=3530&CONTENTS_NO=1&bbsGbn=254&bbsSn=254&pNttSn=199276" },
-      { "title": "아르헨티나 화장품 시장동향 - 대한화장품협회", "url": "https://kcia.or.kr/home/industry/industry_01.php?type=view&no=16385&ss=page%3D1" },
-      { "title": "2025년 글로벌 화장품 규제 정리 - REACH24H", "url": "https://www.reach24h.com/ko/news/company-news/2025-global-cosmetic.html" }
+      {
+        "title": "아르헨티나 화장품 시장동향 - KOTRA 해외경제정보드림",
+        "url": "https://dream.kotra.or.kr/dream/cms/news/actionKotraBoardDetail.do?SITE_NO=2&MENU_ID=3530&CONTENTS_NO=1&bbsGbn=254&bbsSn=254&pNttSn=199276"
+      },
+      {
+        "title": "아르헨티나 화장품 시장동향 - 대한화장품협회",
+        "url": "https://kcia.or.kr/home/industry/industry_01.php?type=view&no=16385&ss=page%3D1"
+      },
+      {
+        "title": "2025년 글로벌 화장품 규제 정리 - REACH24H",
+        "url": "https://www.reach24h.com/ko/news/company-news/2025-global-cosmetic.html"
+      }
     ],
     "updatedAt": "2026-08-18T09:00:00+09:00",
     "note": "아르헨티나 시장조사 담당이 실제 웹 검색으로 조사한 결과입니다."
   },
-
   "윤도아": {
-    "headline": "EU 수입 화장품 점유율 1위(21.7%) — 그러나 2026년 규제 대개편이 최대 변수",
-    "text": "한국은 EU 수입 화장품 시장 점유율 1위(21.7%)에 올랐고, 대EU 수출은 2013년 이후 꾸준히 늘어 5위 수출국이 됐습니다. 스페인에서는 코트라와 롯데홈쇼핑이 '2026 대한민국 브랜드 엑스포 in 남유럽'을 열어 체험형 마케팅으로 소비자와 바이어를 동시에 공략하고 있습니다. 다만 2026년 규제 개편이 실무상 가장 큰 부담입니다. 7월부터 최신 INCI 성분 사전이 강제 적용되고 향료 알레르겐 82종 표기가 확대돼 패키지 전면 수정이나 원료 대체가 필요할 수 있습니다. 8월 12일부터는 포장재 규정(PPWR)이 적용돼 PFAS·중금속 제한과 추적성 요건이 의무화됩니다.",
+    "headline": "스페인 K뷰티 온라인 소비 430% 급증, 신규 판로 형성 중",
+    "text": "스페인 TikTok Shop 내 K뷰티 판매가 전년 대비 430% 성장했습니다. 스페인 온라인 쇼퍼 56.7%가 뷰티 제품을 온라인 구매하며, 프리미엄화 및 클린뷰티 선호도 상승 중입니다. 유럽 전역에서 K뷰티가 전통 브랜드 점유율을 잠식(15% 감소)하는 추세입니다.",
     "keyPoints": [
-      "EU 수입 화장품 점유율 1위 21.7% — 이미 최대 공급국 지위",
-      "스페인이 남유럽 진출 교두보로 부상 (코트라·롯데 엑스포 개최)",
-      "2026년 7월 INCI 사전 강제 + 향료 알레르겐 82종 표기 확대 → 라벨 전면 재작업 가능성",
-      "2026년 8월 12일 PPWR 시행 → PFAS·중금속 제한, 포장 추적성 의무",
-      "CPNP 등록 + PIF(기술문서) 사전 준비 필수"
+      "TikTok Shop 등 소셜커머스가 K뷰티 주요 성장 채널로 부상",
+      "스페인 온라인 뷰티 구매층 확대로 시장 기회 증가",
+      "EU 프리미엄 프로슈머층이 K뷰티 선호 경향"
     ],
-    "watchOut": "라벨·포장 규제가 두 건 연달아 시행됩니다. 기존 재고 패키지가 8월 이후 유통 불가해질 수 있어 재고 소진 계획을 미리 잡아야 합니다.",
+    "watchOut": "지역별 온라인 채널 전략 차등화 필요 (소셜커머스 vs 전통 이커머스)",
     "sources": [
-      { "title": "EU, 2026년 화장품 규제 대개편… K-뷰티 '성분·라벨·공급망' 전면 대응 비상 - 플라넷뉴스", "url": "http://www.plastics.kr/news/articleView.html?idxno=1757" },
-      { "title": "K-뷰티 열풍 스페인까지…코트라·롯데, 남유럽 판로 넓힌다 - 헤럴드경제", "url": "https://biz.heraldcorp.com/article/10759816" },
-      { "title": "EU, 수입화장품 규제준수 강화...CPNP와 PIF 대행사 선정 시 주의점 - 팜뉴스", "url": "https://www.pharmnews.com/news/articleView.html?idxno=243196" }
+      {
+        "title": "K-Beauty Goes Global: Sales Surge 53% as Korean Innovation Reshapes Beauty Growth",
+        "url": "https://nielseniq.com/global/en/news-center/2026/k-beauty-goes-global-sales-surge-53-as-korean-innovation-reshapes-beauty-growth/"
+      },
+      {
+        "title": "Spain E-commerce Market Size, Share, Growth, Trends, 2034",
+        "url": "https://www.imarcgroup.com/spain-e-commerce-market"
+      },
+      {
+        "title": "Europe K-Beauty Products Market Size, Report 2035",
+        "url": "https://www.gminsights.com/industry-analysis/europe-k-beauty-products-market"
+      }
     ],
-    "updatedAt": "2026-08-18T09:00:00+09:00",
-    "note": "스페인·EU 시장조사 담당이 실제 웹 검색으로 조사한 결과입니다."
+    "updatedAt": "2026-08-18T13:47:36.693+09:00",
+    "note": "Claude 클라우드 스케줄러가 자동으로 갱신한 결과입니다."
   },
-
   "최이든": {
     "headline": "사우디·UAE가 GCC K뷰티 수요의 75%+ — 할랄은 의무 아니지만 채널 진입에 유리",
     "text": "GCC 뷰티·퍼스널케어 시장은 2028년 115억 달러 규모로 커질 전망이며, 사우디가 52%를 차지하고 UAE는 연평균 4.5% 성장 중입니다. 사우디와 UAE 두 나라가 GCC K뷰티 수요의 75% 이상을 차지합니다. 할랄 화장품 시장은 연 15% 성장세이고, GCC 소비자의 80%가 할랄 인증 제품에 더 지불할 의향이 있다고 답했습니다. 다만 화장품 할랄 인증은 법적 의무가 아니며, 일부 채널에서 수용도를 높이는 수단입니다. UAE는 인증 시 국가 할랄 마크 사용을 요구하고, 인증기관은 MOIAT가 인정한 곳이어야 합니다. COSRX·ANUA·조선미녀·이즈앤트리 등 주요 K뷰티 브랜드는 돼지 유래 성분과 금지 알코올을 쓰지 않아 할랄 기준에 대체로 부합합니다. 화장품 등록은 의무이며 UAE 승인에 4~8주가 걸립니다.",
@@ -61,9 +83,18 @@
     ],
     "watchOut": "할랄 인증을 '필수'로 오해해 비용을 과다 집행하지 않도록 주의가 필요합니다. 진입 채널이 요구하는지 먼저 확인하고 결정하는 편이 낫습니다.",
     "sources": [
-      { "title": "Middle East K-Beauty Opportunity: Halal Certification & Demand - KNOK Global", "url": "https://knokglobal.com/blog/middle-east-k-beauty-halal-certification-demand" },
-      { "title": "GCC Beauty Industry: 2026 Verified Stats - WifiTalents", "url": "https://wifitalents.com/gcc-beauty-industry-statistics/" },
-      { "title": "Halal Certification for Export to UAE, Saudi Arabia, and GCC - AHF", "url": "https://halalfoundation.org/halal-certification-for-export-to-uae-saudi-arabia-and-gcc-mena-countries/" }
+      {
+        "title": "Middle East K-Beauty Opportunity: Halal Certification & Demand - KNOK Global",
+        "url": "https://knokglobal.com/blog/middle-east-k-beauty-halal-certification-demand"
+      },
+      {
+        "title": "GCC Beauty Industry: 2026 Verified Stats - WifiTalents",
+        "url": "https://wifitalents.com/gcc-beauty-industry-statistics/"
+      },
+      {
+        "title": "Halal Certification for Export to UAE, Saudi Arabia, and GCC - AHF",
+        "url": "https://halalfoundation.org/halal-certification-for-export-to-uae-saudi-arabia-and-gcc-mena-countries/"
+      }
     ],
     "updatedAt": "2026-08-18T09:00:00+09:00",
     "note": "GCC 시장조사 담당이 실제 웹 검색으로 조사한 결과입니다."
