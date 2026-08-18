@@ -1,5 +1,5 @@
 import { STAFF, LEADER_OF } from '../data/staff.js';
-import { $, state, paint, log, select, selected } from './office.js';
+import { $, state, paint, select, selected } from './office.js';
 import { hqDispatch, submitForReview } from './orchestrator.js';
 import { detectMeetingCall, callMeeting, meeting } from './meeting.js';
 import { HQ_MANAGER } from '../data/layout.js';
@@ -83,38 +83,31 @@ async function dispatch(text){
     return;
   }
 
-  // 1) 본부장이 지시를 받아 담당 팀장에게 직접 걸어가 전달한다
-  await hqDispatch(text, name, simMin);
+  /* 1) 본부장이 팀장에게 걸어가 전달한다 — 기다리지 않는다.
+     왕복 도보가 16초라 await 하면 그동안 화면이 죽은 것처럼 보인다. 연출은 뒤에서 돌린다. */
+  hqDispatch(text, name, simMin);
 
-  // 2) 담당자가 업무를 수행한다
-  st.st='처리중'; st.bubble='지시 업무 처리 중…'; st.bt=getSimMin();
-  paint(getSimMin());
-  $('out').innerHTML = `<span class="who">${name} · ${s.r}</span>\n작성 중…`;
+  /* 2) 접수 처리.
+     예전에는 여기서 브라우저가 api.anthropic.com 을 직접 불렀다.
+     그건 CORS 로 구조적으로 막혀 있어 한 번도 성공한 적이 없고, 매번 "호출 실패"만 떴다.
+     지시는 접수해서 보고 대기열에 올리고, 실제 답은 본부장이 처리한다 (문서 요청과 같은 방식).
+     ★ AI를 호출하지 않는다 — 실패할 일이 없다. */
+  st.bubble = '지시 접수'; st.bt = simMin;
+  submitForReview({
+    name,
+    title: text,
+    result: `대표님 지시를 접수해 ${LEADER_OF[s.t]} 팀장 검증을 거쳤습니다.\n`
+          + `담당: ${name} (${s.rank} · ${s.r})\n\n`
+          + `이 건은 실제 조사·판단이 필요해 본부장이 직접 처리합니다.\n`
+          + `보고를 열어 "이 보고서 내려받기"로 지시서를 받으시거나, 아래 내용을 본부장에게 그대로 주시면 됩니다.`,
+    tests: '접수·배정 확인 완료',
+    uncertain: '아직 조사 전입니다. 결과는 본부장 처리 후 올라옵니다.',
+    needsDecision: '급한 건이면 본부장에게 바로 말씀해 주십시오.',
+  }, getSimMin());
 
-  try{
-    const res = await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({
-        model:"claude-sonnet-4-6", max_tokens:1000,
-        system: s.p + " 아우라코리아는 한국 화장품 수출 무역회사이며 아르헨티나·스페인·GCC가 주요 시장이다. 답변은 한국어로, 400자 이내로, 실무 담당자가 대표에게 보고하듯 간결하게 작성한다. 불확실한 수치는 확인 필요라고 명시한다.",
-        messages:[{role:"user", content:text}]
-      })
-    });
-    const data = await res.json();
-    const reply = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n") || "(응답 없음)";
-    $('out').innerHTML = `<span class="who">${name} · ${s.r}</span>\n${reply}`;
-    st.bubble='결과 제출';
-    // 3) 팀장 검증 → 본부장 검토 → 대표 보고 대기열 등록 (헌장 14항)
-    submitForReview({
-      name, title: text, result: reply,
-      tests: '외부 검증 없음 (AI 응답)',
-      uncertain: '수치는 확인 필요',
-    }, getSimMin());
-  }catch(e){
-    $('out').innerHTML = `<span class="err">호출 실패 — 이 사무실은 클로드 앱 안에서 열어야 직원이 응답합니다.\n파일을 브라우저에서 직접 열면 UI만 동작합니다.</span>`;
-    st.bubble='연결 실패';
-    log(getSimMin(), `${HQ_MANAGER.name} 본부장`, `${name}의 결과가 나오지 않았습니다. 대표님 보고를 보류합니다.`);
-  }
+  $('out').innerHTML = `<span class="who">${name} · ${s.r}</span>\n`
+    + `지시를 접수했습니다. ${LEADER_OF[s.t]} 팀장 검증 후 보고 대기열에 올렸습니다.\n`
+    + `대기열에서 [내용 보기]를 누르시면 확인·내려받기 하실 수 있습니다.`;
   const now = getSimMin();
   st.st='근무중'; st.bt=now;
   paint(now); if(selected) select(selected, now);

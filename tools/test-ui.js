@@ -199,6 +199,21 @@ const check = (name, ok, detail = '') => {
       await page.evaluate(() => document.querySelector('.vwClose')?.click());
     }
 
+    /* 10. 일반 지시가 실패하지 않는다 (예전엔 브라우저가 api.anthropic.com 을 불러 매번 실패했다) */
+    const external = [];
+    page.on('request', r => { if(!/^http:\/\/127\.0\.0\.1:/.test(r.url())) external.push(r.url()); });
+    await page.evaluate(() => { document.querySelectorAll('.vwModal,.dsModal').forEach(e=>e.remove()); });
+    await page.$eval('#cmd', el => el.value = '');
+    // 앞 단계에서 강태오를 눌러 뒀으므로 태그로 대상을 분명히 지정한다
+    await page.type('#cmd','@나윤호 아르헨티나 재고 확인해줘');
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => document.getElementById('sendBtn').click());
+    await new Promise(r=>setTimeout(r,2500));
+    const out = await page.$eval('#out', el => el.textContent);
+    check('지시가 실패 메시지를 내지 않는다', !out.includes('호출 실패'), out.split('\n')[1] || out.slice(0,40));
+    check('지시가 접수된다', out.includes('접수'), '');
+    check('외부 서버를 부르지 않는다', external.length === 0, external[0] || '');
+
     check('자바스크립트 오류 없음', jsErrors.length === 0, jsErrors[0] || '');
 
     await page.screenshot({ path: path.join(SHOT,'ui-test.png') });
