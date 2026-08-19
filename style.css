@@ -1329,3 +1329,10 @@ button{font-family:inherit;cursor:pointer}
 .realResult .sources{margin:7px 0 0;padding-left:14px;font-size:9px}
 .realResult .sources a{color:var(--rose)}
 .realResult .note{margin-top:7px;font-size:9px;color:var(--ink-2);font-style:italic}
+
+/* 본부장 숙제 — 배포본에서 복사해 전달할 때 쓰는 줄 */
+.hwCopy{display:inline-block;margin-top:4px}
+.hwCopy button{
+  font:inherit;font-size:10px;padding:2px 9px;margin:0 3px;border-radius:5px;cursor:pointer;
+  background:var(--mint);color:#08211B;border:1px solid rgba(0,0,0,.25);
+}

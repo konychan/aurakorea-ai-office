@@ -105,9 +105,20 @@ async function dispatch(text){
     needsDecision: '급한 건이면 본부장에게 바로 말씀해 주십시오.',
   }, getSimMin());
 
+  // 3) 본부장 숙제로 접수한다 — 대표님이 옮겨 적지 않으셔도 되게
+  const { fileHomework } = await import('./homework.js');
+  const where = await fileHomework({ title: text, assignee: name, team: s.t });
+
   $('out').innerHTML = `<span class="who">${name} · ${s.r}</span>\n`
     + `지시를 접수했습니다. ${LEADER_OF[s.t]} 팀장 검증 후 보고 대기열에 올렸습니다.\n`
-    + `대기열에서 [내용 보기]를 누르시면 확인·내려받기 하실 수 있습니다.`;
+    + (where === 'server'
+        ? `본부장 숙제로 접수했습니다. 다음 작업 때 처리해 올리겠습니다.`
+        : `<span class="hwCopy">본부장 숙제로 쌓아 뒀습니다. <button id="hwBtn">숙제 복사</button> 눌러 본부장에게 주십시오.</span>`);
+  const hw = $('hwBtn');
+  if(hw) hw.onclick = async () => {
+    const { copyAll } = await import('./homework.js');
+    hw.textContent = await copyAll() ? '복사했습니다' : '복사 실패 — 직접 선택해 주십시오';
+  };
   const now = getSimMin();
   st.st='근무중'; st.bt=now;
   paint(now); if(selected) select(selected, now);

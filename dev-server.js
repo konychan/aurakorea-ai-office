@@ -91,7 +91,39 @@ const AGENT_TASKS = {
   },
 };
 
+/* 대표님 지시를 본부장 숙제로 접수한다.
+   브라우저는 파일을 못 쓰지만 이 서버는 쓸 수 있다 — 그래서 지시가 저장소 안(data/homework.json)에
+   바로 떨어지고, 본부장이 그 파일을 읽어 처리한다. 배포본(Vercel)에는 이 경로가 없으므로
+   프론트엔드가 실패를 감지해 "복사해서 전달" 방식으로 넘어간다. */
+const HOMEWORK = path.join(ROOT, 'data/homework.json');
+function addHomework(item){
+  let list = [];
+  try{ list = JSON.parse(fs.readFileSync(HOMEWORK, 'utf8').replace(/^﻿/, '')); }catch(e){}
+  list.unshift({ ...item, id: 'hw' + Date.now(), at: new Date().toISOString(), status: '대기' });
+  fs.writeFileSync(HOMEWORK, JSON.stringify(list.slice(0, 200), null, 2) + '\n', 'utf8');
+  return list.length;
+}
+
 const server = http.createServer(async (req, res) => {
+  if(req.method === 'POST' && req.url === '/api/homework'){
+    // 한글이 조각나서 오면 문자열 이어붙이기로는 깨진다. 버퍼로 모아 한 번에 해석한다.
+    const chunks = [];
+    req.on('data', c => chunks.push(c));
+    req.on('end', () => {
+      try{
+        const item = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        const count = addHomework(item);
+        console.log(`숙제 접수: ${item.title} (총 ${count}건)`);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok:true, count }));
+      }catch(e){
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok:false, error: String(e.message || e) }));
+      }
+    });
+    return;
+  }
+
   if(req.method === 'POST' && req.url.startsWith('/api/agent/')){
     const name = decodeURIComponent(req.url.slice('/api/agent/'.length));
     const task = AGENT_TASKS[name];

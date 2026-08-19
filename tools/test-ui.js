@@ -214,6 +214,20 @@ const check = (name, ok, detail = '') => {
     check('지시가 접수된다', out.includes('접수'), '');
     check('외부 서버를 부르지 않는다', external.length === 0, external[0] || '');
 
+    /* 11. 지시가 본부장 숙제로 접수된다 (로컬 서버는 저장소 파일에 기록한다) */
+    const hwBefore = require('fs').existsSync(path.join(ROOT,'data/homework.json'))
+      ? JSON.parse(require('fs').readFileSync(path.join(ROOT,'data/homework.json'),'utf8')).length : 0;
+    await page.$eval('#cmd', el => el.value = '');
+    await page.type('#cmd','@하람 두바이 바이어 연락처 정리');
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => document.getElementById('sendBtn').click());
+    await new Promise(r=>setTimeout(r,1200));
+    const hwAfter = require('fs').existsSync(path.join(ROOT,'data/homework.json'))
+      ? JSON.parse(require('fs').readFileSync(path.join(ROOT,'data/homework.json'),'utf8')) : [];
+    check('지시가 본부장 숙제로 쌓인다', hwAfter.length > hwBefore, hwAfter[0] ? hwAfter[0].title : '없음');
+    check('숙제에 한글이 깨지지 않는다', !!hwAfter[0] && hwAfter[0].title.includes('두바이'), hwAfter[0] ? hwAfter[0].title : '');
+    check('숙제 접수 안내가 뜬다', (await page.$eval('#out', el=>el.textContent)).includes('숙제'), '');
+
     check('자바스크립트 오류 없음', jsErrors.length === 0, jsErrors[0] || '');
 
     await page.screenshot({ path: path.join(SHOT,'ui-test.png') });

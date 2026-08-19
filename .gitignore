@@ -5,3 +5,6 @@ node_modules/
 
 # 문서 검수용 렌더 이미지 — 납품물이 아니라 눈으로 확인하려고 뽑은 중간 산출물이다
 tools/docgen/out/_preview/
+
+# 본부장 숙제는 로컬에서만 쌓인다 (배포본에는 올리지 않는다)
+data/homework.json
