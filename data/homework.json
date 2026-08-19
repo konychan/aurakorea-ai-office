@@ -4,7 +4,25 @@
     "assignee": "최이든",
     "team": "gcc",
     "at": "2026-08-19T01:22:03.291Z",
-    "status": "대기",
-    "id": "hw1787102523291"
+    "status": "완료",
+    "id": "hw1787102523291",
+    "result": "사우디 화장품 등록은 SFDA의 e-Cosma 전자 신고 시스템을 통해 진행되며, 로컬 사우디 회사만 신고 가능합니다. GSO 1943/2528/2020 준수와 아랍어 라벨이 필수이고, 2025년 9월 신규 금지 성분 21개(4-methylimidazole, dibutyltin 화합물 등)가 추가되어 제품 재검토가 필요합니다. 적합성 인증서는 매 선적마다 준비하고, 등록 소요 기간은 15업무일입니다.",
+    "sources": [
+      {
+        "title": "Navigating Saudi Arabia's Updated Cosmetic Regulations",
+        "url": "https://www.sgs.com/en/news/2025/12/pca-2025-q4-navigating-saudi-arabias-updated-cosmetic-regulations"
+      },
+      {
+        "title": "Cosmetics Registration in Saudi Arabia (SFDA eCosma): Notification Requirements & Process",
+        "url": "https://mrg.com.sa/en/knowledge-hub/cosmetics-registration-saudi-arabia-ecosma"
+      },
+      {
+        "title": "SFDA Labeling Requirements for Cosmetic Products in Saudi Arabia",
+        "url": "https://www.sanyogconformity.com/blog/sfda-labeling-requirements-for-cosmetic-products-in-saudi/"
+      }
+    ],
+    "uncertain": "신규 금지 성분 21개의 전체 목록과 현재 회사 제품 포함 여부 미확인",
+    "needsDecision": "기존 제품들이 2025년 신규 금지 성분을 포함하는지 즉시 검토 및 재포뮬레이션 필요성 판단",
+    "doneAt": "2026-08-19T10:23:08.470+09:00"
   }
 ]
