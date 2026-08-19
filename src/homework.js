@@ -45,3 +45,28 @@ export async function copyAll(){
   save(load().map(h => h.status === '대기' ? { ...h, status: '전달함' } : h));
   return true;
 }
+
+/* 클라우드가 처리해 둔 숙제를 사무실로 들여온다.
+   대표님이 아무것도 안 하셔도, 사무실을 열면 처리된 결과가 보고 대기열에 올라와 있다. */
+export async function loadDoneHomework(submit, simMin){
+  let list = [];
+  try{
+    const res = await fetch('/data/homework.json', { cache:'no-store' });
+    list = await res.json();
+  }catch(e){ return 0; }
+
+  const seen = new Set(load().map(h => h.id));   // 이미 화면에 올린 건 다시 올리지 않는다
+  const fresh = list.filter(h => h.status === '완료' && h.result && !seen.has(h.id));
+  fresh.forEach(h => submit({
+    name: h.assignee,
+    title: h.title,
+    result: h.result,
+    sources: h.sources || [],
+    tests: '본부장이 직접 처리 (클라우드 자동 실행)',
+    uncertain: h.uncertain || '',
+    needsDecision: h.needsDecision || '',
+  }, simMin));
+
+  if(fresh.length) save([...fresh.map(h => ({ ...h, status:'표시함' })), ...load()]);
+  return fresh.length;
+}

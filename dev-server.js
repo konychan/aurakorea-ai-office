@@ -101,7 +101,27 @@ function addHomework(item){
   try{ list = JSON.parse(fs.readFileSync(HOMEWORK, 'utf8').replace(/^﻿/, '')); }catch(e){}
   list.unshift({ ...item, id: 'hw' + Date.now(), at: new Date().toISOString(), status: '대기' });
   fs.writeFileSync(HOMEWORK, JSON.stringify(list.slice(0, 200), null, 2) + '\n', 'utf8');
+  pushHomework(item.title);
   return list.length;
+}
+
+/* 숙제를 저장소로 올린다 — 그래야 클라우드 루틴이 아침에 읽어 자동으로 처리한다.
+   실패해도(오프라인 등) 파일은 이미 남아 있으므로 지시가 사라지지는 않는다. */
+function pushHomework(title){
+  const { execFile } = require('child_process');
+  const run = args => new Promise(r => execFile('git', args, { cwd: ROOT }, (e, o, s) => r(e ? (s || e.message) : null)));
+  (async () => {
+    for(const args of [
+      ['add', 'data/homework.json'],
+      ['commit', '-m', `대표님 지시 접수: ${title}`],
+      ['pull', '--rebase', '-q', 'origin', 'master'],
+      ['push', '-q', 'origin', 'master'],
+    ]){
+      const err = await run(args);
+      if(err){ console.log('숙제 업로드 보류(로컬에는 저장됨):', String(err).split('\n')[0]); return; }
+    }
+    console.log('숙제 업로드 완료 — 클라우드가 처리합니다');
+  })();
 }
 
 const server = http.createServer(async (req, res) => {

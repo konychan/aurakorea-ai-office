@@ -150,6 +150,12 @@
     initOrchestrator(getSimMin);
     initMeeting(getSimMin);
     initDocDesk();          // 문서제작실 요청 버튼 (PPT · Excel · Word)
+    // 클라우드가 밤새 처리해 둔 숙제를 보고 대기열로 들여온다 (대표님이 하실 일 없음)
+    import('./src/homework.js').then(async hw => {
+      const { submitForReview } = await import('./src/orchestrator.js');
+      const n = await hw.loadDoneHomework(submitForReview, SIM_WINDOW.open);
+      if(n) log(SIM_WINDOW.open, '시스템', `대표님 지시 ${n}건이 처리되어 보고 대기열에 올라왔습니다.`);
+    });
     // 도면 위(미팅룸 옆) 회의 소집 버튼
     bindFloorMeetingButtons({
       'call-region': () => callMeeting({ scope:'region', title:'지역팀장 회의' }, getSimMin()),
