@@ -150,6 +150,20 @@ export const DOC_STUDIO = {
   owner: '강태오',
 };
 
+/* ═══════════ 대표실 오른쪽 — 번역실 ═══════════
+   대표님이 "내 옆에 두라"고 지시하신 부서다. 대표실(row 1~10)과 위아래 높이를 맞춰
+   한 줄로 나란히 보이게 놓는다. 왼쪽 위 문서제작실과 좌우 대칭이 된다.
+
+   번역팀은 팀 룸 격자를 쓰지 않는다 (data/teams.js 의 room:'transRoom').
+   격자는 8칸이 정원이라 9번째 팀을 넣으면 도면 밖으로 밀려나기 때문이다.
+   방 크기는 roomHeightFor(2) = 9 에 맞췄다 — 인원이 늘면 h 를 그 값으로 다시 잡는다. */
+export const TRANS_ROOM = {
+  id:'transRoom', name:'번역실', nameEn:'TRANSLATION ROOM',
+  col: 44, row: 1, w: 11, h: 9,
+  door: { col: 49.5, row: ROW_CORRIDORS[0] },   // 문은 아래쪽 벽 → 첫 행 가로 통로로 나온다
+  team: 'trans',
+};
+
 /* ═══════════ 맨 오른쪽 — 휴게공간 · 화장실 ═══════════ */
 const FAR_RIGHT_COL = TEAM_SIDE.right.cols[1] + TEAM_ROOM.w + 2;   // = 67
 

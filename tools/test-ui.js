@@ -149,7 +149,9 @@ const check = (name, ok, detail = '') => {
     const gotReport = await waitFor('#reportQueue button[data-see]');
     check('보고가 대기열에 쌓인다', gotReport);
     if(gotReport){
-      await page.click('#reportQueue button[data-see]');
+      // 보고 대기열은 새 보고가 올라올 때마다 다시 그려진다.
+      // page.click 은 찾은 뒤 누르는 사이에 그 버튼이 사라지면 터진다 — 화면 안에서 바로 누른다.
+      await page.evaluate(() => document.querySelector('#reportQueue button[data-see]')?.click());
       await new Promise(r=>setTimeout(r,350));
       const txt = await page.$eval('.vwCard', el => el.textContent).catch(()=>'');
       check('입장 전에도 보고를 열어 볼 수 있다', txt.includes('한 일과 결과'), txt.slice(0,40).replace(/\s+/g,' '));
@@ -180,8 +182,9 @@ const check = (name, ok, detail = '') => {
       const d = [...document.querySelectorAll('.desk')].find(e => e.dataset.n === '강태오');
       if(d) d.click();
     });
-    await new Promise(r=>setTimeout(r,500));
-    const hasSeeDocs = await page.$('#seeDocs') !== null;
+    // 상세 패널은 동적 import 뒤에 채워지고, 매 tick 마다 다시 그려진다.
+    // 한 번만 찍어 보면 다시 그리는 순간에 걸려 헛발을 짚는다 — 나타날 때까지 기다린다.
+    const hasSeeDocs = await waitFor('#seeDocs', 8000);
     check('강태오 패널에 문서 보기 버튼이 있다', hasSeeDocs);
     if(hasSeeDocs){
       // 도면이 축소 변환돼 있어 좌표 클릭은 빗나갈 수 있다. 요소를 직접 누른다.
@@ -227,6 +230,41 @@ const check = (name, ok, detail = '') => {
     check('지시가 본부장 숙제로 쌓인다', hwAfter.length > hwBefore, hwAfter[0] ? hwAfter[0].title : '없음');
     check('숙제에 한글이 깨지지 않는다', !!hwAfter[0] && hwAfter[0].title.includes('두바이'), hwAfter[0] ? hwAfter[0].title : '');
     check('숙제 접수 안내가 뜬다', (await page.$eval('#out', el=>el.textContent)).includes('숙제'), '');
+
+    /* 12. 번역실 — 대표실 옆 부서방 · 업로드 버튼 · 실제 파일 접수 */
+    check('번역실이 대표실 옆에 있다', await page.$('#room-trans') !== null);
+    const seats = await page.$$eval('#room-trans .desk', els => els.map(e => e.dataset.n));
+    check('번역팀 2명이 번역실에 앉아 있다', seats.includes('차유진') && seats.includes('송하린'), seats.join(', '));
+    check('번역실이 대표실 오른쪽에 있다', await page.evaluate(() => {
+      const ceo = document.querySelector('.ceoRoom'), tr = document.getElementById('room-trans');
+      return parseFloat(tr.style.left) > parseFloat(ceo.style.left) + parseFloat(ceo.style.width);
+    }));
+
+    await page.click('#transUploadBtn');
+    await new Promise(r=>setTimeout(r,250));
+    check('업로드 창이 열린다', await page.$('#tqFile') !== null);
+    const chips = await page.$$eval('.trChip', els => els.map(e => e.dataset.lang));
+    check('3대 언어가 보인다', ['es-AR','en','ko'].every(c => chips.includes(c)), chips.join(', '));
+    check('아르헨티나가 기본 선택돼 있다',
+      await page.$eval('.trChip[data-lang="es-AR"]', el => el.classList.contains('on')));
+
+    // 실제 .pptx 를 올려 본다 (파일이 사무실에 저장되는지까지 확인한다)
+    const SAMPLE = path.join(ROOT, 'files/2026-하반기-3대-수출시장-브리핑.pptx');
+    await (await page.$('#tqFile')).uploadFile(SAMPLE);
+    await page.click('.trChip[data-lang="en"]');          // 영어도 함께 요청
+    await page.type('#tqNote', '브랜드명은 그대로 두세요');
+    await page.click('#tqSend');
+    await new Promise(r=>setTimeout(r,1500));
+
+    const trOrder = await page.$eval('#trOrderText', el => el.textContent).catch(()=>'');
+    check('번역 작업지시서가 나온다', trOrder.includes('PPT 번역 요청') && trOrder.includes('es-AR'), '');
+    check('요청한 언어가 지시서에 다 들어간다', trOrder.includes('en]'), '');
+    check('원문보존 원칙이 지시서에 박혀 있다', trOrder.includes('번역만 한다'), '');
+    check('파일이 사무실에 저장된다',
+      require('fs').existsSync(path.join(ROOT,'tools/translate/inbox/2026-하반기-3대-수출시장-브리핑.pptx')));
+    const hwTr = JSON.parse(require('fs').readFileSync(path.join(ROOT,'data/homework.json'),'utf8'));
+    check('번역 건이 본부장 숙제로 접수된다',
+      !!hwTr[0] && hwTr[0].team === 'trans' && hwTr[0].assignee === '송하린', hwTr[0] ? hwTr[0].title : '없음');
 
     check('자바스크립트 오류 없음', jsErrors.length === 0, jsErrors[0] || '');
 

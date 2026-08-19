@@ -1,7 +1,11 @@
 /* 팀 정의 — 팀 추가는 이 파일 한 곳만 수정한다.
    kind:'region' = 지역팀 (해당 수출 지역을 책임진다)
    kind:'function' = 기능팀 (전 지역 공통 지원 조직)
-   각 팀에는 팀장이 정확히 1명 있어야 한다 (data/staff.js의 rank:'팀장'). */
+   각 팀에는 팀장이 정확히 1명 있어야 한다 (data/staff.js의 rank:'팀장').
+
+   room:'…' 이 붙은 팀은 좌우 팀 룸 격자(2열×2행×2구역 = 8칸)를 쓰지 않고
+   data/layout.js 에 정해 둔 자기 방을 쓴다. 격자는 8칸이 정원이라 여기서 빼 주지 않으면
+   9번째 팀이 도면 밖으로 밀려난다. */
 export const TEAMS = [
   // ── 지역본부 ──
   { id:'ar',    kind:'region',   name:'아르헨티나 지역팀', sub:'부에노스아이레스 · ANMAT', accent:'#7FB6E8' },
@@ -14,6 +18,11 @@ export const TEAMS = [
   { id:'logi',   kind:'function', name:'물류·통관팀',       sub:'선적 · 적입 · 통관',         accent:'#8FD0E8' },
   { id:'fin',    kind:'function', name:'재무·정산팀',       sub:'환율 · 원가 · 마진 · 견적',  accent:'#A9C4E8' },
   { id:'mkt',    kind:'function', name:'마케팅·디자인팀',   sub:'카탈로그 · 콘텐츠',          accent:'#F0B8D0' },
+
+  // ── 대표실 옆 단독 부서 ──
+  // PPT 를 다른 언어로 옮기기만 한다. 내용·디자인은 손대지 않는다.
+  { id:'trans',  kind:'function', name:'번역팀',            sub:'PPT 원문보존 번역 · 전 언어', accent:'#E8B96A',
+    room:'transRoom' },
 ];
 
 export const REGION_TEAMS = TEAMS.filter(t => t.kind === 'region');

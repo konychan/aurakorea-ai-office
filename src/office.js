@@ -1,7 +1,7 @@
 import { TEAMS } from '../data/teams.js';
 import { STAFF, RANKS, LEADER_OF } from '../data/staff.js';
 import { CEO, HQ_MANAGER, CEO_ROOM, HQ_ROOM, CEO_QUEUE, ENTRANCE, WORK_HOURS, SIM_WINDOW,
-         COMPANY, MEETING_ROOM, LOUNGE, RESTROOM, RECEPTION, DOC_STUDIO,
+         COMPANY, MEETING_ROOM, LOUNGE, RESTROOM, RECEPTION, DOC_STUDIO, TRANS_ROOM,
          GRID, CORRIDOR, ROW_CORRIDORS, layoutTeamRooms, deskSlots, buildPath,
          IDLE_ACTIVITIES, IDLE_MAX_CONCURRENT } from '../data/layout.js';
 import { character, vipCharacter } from './character.js';
@@ -832,6 +832,51 @@ function docStudioHTML(){
   </div>`;
 }
 
+/* 번역실 — 대표실 바로 옆 단독 부서방 (대표님 지시: "내 옆에다가").
+   팀 룸과 똑같은 방식(책상·의자·명패·모니터 상태)으로 그리되 좌표만 layout.js 에 고정해 둔다.
+   좌우 팀 룸 격자는 8칸이 정원이라 여기에 끼워 넣을 수 없어서다.
+   방 아래에는 대표님이 바로 누르시는 "PPT 올려서 번역 맡기기" 버튼이 붙는다. */
+function transRoomHTML(){
+  const t = TEAMS.find(x => x.id === TRANS_ROOM.team);
+  const mem = STAFF.filter(s => s.t === TRANS_ROOM.team)
+                   .sort((a, b) => RANKS.indexOf(a.rank) - RANKS.indexOf(b.rank));
+  if(!t || !mem.length) return '';
+
+  const slots = deskSlots(mem.length, TRANS_ROOM.w);
+  const leader = mem.find(s => s.rank === '팀장');
+
+  const desks = mem.map((s, i) => {
+    const sl = slots[i];
+    // 이 직원의 절대 좌표를 기억해둔다 (이동 목적지로 쓴다)
+    deskPos[s.n] = { col: TRANS_ROOM.col + sl.col, row: TRANS_ROOM.row + sl.row, door: TRANS_ROOM.door, team: t.id };
+    return `<div class="desk${s.rank==='팀장'?' leader':''}" data-n="${s.n}" data-st="미출근"
+                 style="left:${sl.col*T}px;top:${sl.row*T}px">
+        <span class="led"></span>
+        <div class="seat">
+          <div class="seat__chair">${officeChair(s.rank==='팀장')}</div>
+          <div class="seat__person">${avatar(s)}</div>
+          <div class="seat__desk">${workDesk(s.t, { isLeader: s.rank==='팀장' })}</div>
+        </div>
+        ${nameplate(s)}
+      </div>`;
+  }).join('');
+
+  return `<div class="room function transRoom" id="room-${t.id}"
+               style="${box(TRANS_ROOM)};--accent:${t.accent}"
+               data-col="${TRANS_ROOM.col}" data-row="${TRANS_ROOM.row}">
+    <div class="room__doorB" title="번역실 문"></div>
+    <h3><span class="dot"></span>${TRANS_ROOM.name}<span class="kindTag" id="transState">대기</span></h3>
+    <div class="sub">${t.sub} · ${mem.length}명${leader ? ` · 팀장 ${leader.n}` : ''}</div>
+    <div class="desks">${desks}</div>
+  </div>
+
+  <!-- 번역실 아래: 대표님이 파일을 올려 바로 일을 시키시는 버튼 -->
+  <div class="dsButtons trButtons"
+       style="left:${TRANS_ROOM.col*T}px;top:${(TRANS_ROOM.row + TRANS_ROOM.h + 0.35)*T}px;width:${TRANS_ROOM.w*T}px">
+    <button class="dsBtn trBtn" id="transUploadBtn">PPT 올려서 번역 맡기기</button>
+  </div>`;
+}
+
 // 화장실 (맨 오른쪽, 휴게공간 아래)
 function restroomHTML(){
   return `<div class="room2 restroom room--fixed" id="restroom" style="${box(RESTROOM)}"
@@ -893,12 +938,14 @@ export function buildFloor(){
   // 방 높이를 인원수에 맞춰 잡는다 (도면 세로를 줄여 한 화면에 들어오게 한다)
   // 단독 작업실을 쓰는 직원(강태오)은 팀 룸 자리 계산에서 뺀다 — 소속은 그대로다
   const inRoom = t => STAFF.filter(s => s.t === t && !s.solo);
+  // room 이 지정된 팀(번역팀)은 자기 방을 쓰므로 좌우 격자에서 뺀다 — 격자는 8칸이 정원이다
+  const gridTeams = TEAMS.filter(t => !t.room);
   const roomPos = layoutTeamRooms(
-    TEAMS.map(t => ({ id: t.id, count: inRoom(t.id).length }))
+    gridTeams.map(t => ({ id: t.id, count: inRoom(t.id).length }))
   );
 
   /* ── 팀 룸 ── */
-  const teamRooms = TEAMS.map(t => {
+  const teamRooms = gridTeams.map(t => {
     const mem = inRoom(t.id).sort(byRank);
     const away = STAFF.filter(s => s.t === t.id && s.solo);
     const rp = roomPos[t.id];
@@ -1015,6 +1062,9 @@ export function buildFloor(){
 
       <!-- 왼쪽 위: 문서제작실 (Excel · PPT · Word 전담) -->
       ${docStudioHTML()}
+
+      <!-- 대표실 오른쪽: 번역실 (PPT 원문보존 번역) -->
+      ${transRoomHTML()}
 
       <!-- 맨 오른쪽: 휴게공간 · 화장실 -->
       ${loungeHTML()}
@@ -1208,7 +1258,8 @@ export function select(name, simMin = lastSimMin){
     <div class="duty">${s.duty}</div>
     <button class="go" id="goBtn">이 직원에게 직접 지시</button>
     ${realBlock}
-    ${s.docPro ? `<div id="docReq"></div><div id="folio"></div>` : ''}`;
+    ${s.docPro ? `<div id="docReq"></div><div id="folio"></div>` : ''}
+    ${s.t === 'trans' ? `<div id="transReq"></div>` : ''}`;
   // 지시창에 @이름을 미리 넣어 둔다 — 누구에게 시키는지 헷갈리지 않게 한다
   $('goBtn').onclick = ()=>{
     const cmd = $('cmd');
@@ -1217,7 +1268,19 @@ export function select(name, simMin = lastSimMin){
     cmd.placeholder = `${s.n}에게 지시…`;
   };
   if(s.docPro) renderDocPanel();
+  if(s.t === 'trans') renderTransPanel();
   paint(simMin);
+}
+
+/* 번역팀 전용 패널 — 대표님이 맡기신 번역 건 목록 */
+async function renderTransPanel(){
+  const box = $('transReq');
+  if(!box) return;
+  const { jobListHTML, bindJobList, openUpload } = await import('./transdesk.js');
+  box.innerHTML = `<button class="seeDocs" id="newTrans">PPT 올려서 번역 맡기기</button>` + jobListHTML();
+  bindJobList(box);
+  const btn = $('newTrans');
+  if(btn) btn.onclick = () => openUpload();
 }
 
 /* 문서 제작 담당 전용 패널 — 대표님 요청 목록 + 지금까지 만든 문서 */

@@ -139,6 +139,7 @@
   import { initOrchestrator } from './src/orchestrator.js';
   import { initMeeting, callMeeting, endMeeting } from './src/meeting.js';
   import { initDocDesk } from './src/docdesk.js';
+  import { initTransDesk } from './src/transdesk.js';
   import { SIM_WINDOW } from './data/layout.js';
 
   function startApp(){
@@ -150,6 +151,7 @@
     initOrchestrator(getSimMin);
     initMeeting(getSimMin);
     initDocDesk();          // 문서제작실 요청 버튼 (PPT · Excel · Word)
+    initTransDesk();        // 번역실 업로드 버튼 (PPT 원문보존 번역)
     // 클라우드가 밤새 처리해 둔 숙제를 보고 대기열로 들여온다 (대표님이 하실 일 없음)
     import('./src/homework.js').then(async hw => {
       const { submitForReview } = await import('./src/orchestrator.js');

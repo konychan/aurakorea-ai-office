@@ -124,7 +124,65 @@ function pushHomework(title){
   })();
 }
 
+/* 대표님이 올리신 PPT 를 사무실 안으로 들여놓는다.
+   브라우저는 파일을 저장할 수 없지만 이 서버는 할 수 있다 — 그래서 번역실 업로드 버튼이
+   실제로 동작한다. 배포본(Vercel)에는 이 경로가 없으므로 프론트엔드가 실패를 감지해
+   "지시서 복사해서 전달" 방식으로 넘어간다.
+   ★ 파일은 저장소에 올리지 않는다(.gitignore). 대표님 문서를 임의로 외부에 내보내지 않는다. */
+const INBOX = path.join(ROOT, 'tools/translate/inbox');
+const MAX_UPLOAD = 40 * 1024 * 1024;      // base64 로 부풀어도 받아낼 수 있는 상한
+
+function saveUpload({ name, langs, note, data }){
+  // 경로 조작 방지 — 파일명만 쓴다
+  const safe = path.basename(String(name || '')).replace(/[\\/:*?"<>|]/g, '_');
+  if(!/\.pptx$/i.test(safe)) throw new Error('.pptx 파일만 받습니다');
+
+  const buf = Buffer.from(String(data || ''), 'base64');
+  if(!buf.length) throw new Error('파일 내용이 비어 있습니다');
+  // .pptx 는 ZIP 이다. 앞 두 글자가 PK 가 아니면 진짜 pptx 가 아니다.
+  if(buf[0] !== 0x50 || buf[1] !== 0x4B) throw new Error('pptx 파일이 아닙니다');
+
+  fs.mkdirSync(INBOX, { recursive: true });
+  fs.writeFileSync(path.join(INBOX, safe), buf);
+
+  const list = Array.isArray(langs) ? langs : [];
+  addHomework({
+    title: `PPT 번역: ${safe} → ${list.join(', ')}`,
+    assignee: '송하린',
+    team: 'trans',
+    local: true,                    // 파일은 이 PC 에만 있다 (클라우드에서는 처리할 수 없다)
+    file: `tools/translate/inbox/${safe}`,
+    langs: list,
+    note: note || '',
+  });
+  return safe;
+}
+
 const server = http.createServer(async (req, res) => {
+  if(req.method === 'POST' && req.url === '/api/translate-upload'){
+    const chunks = [];
+    let size = 0;
+    let tooBig = false;
+    req.on('data', c => {
+      size += c.length;
+      if(size > MAX_UPLOAD){ tooBig = true; req.destroy(); return; }
+      chunks.push(c);
+    });
+    req.on('end', () => {
+      try{
+        if(tooBig) throw new Error('파일이 너무 큽니다');
+        const saved = saveUpload(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+        console.log(`번역 요청 파일 저장: tools/translate/inbox/${saved}`);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok:true, file: saved }));
+      }catch(e){
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok:false, error: String(e.message || e) }));
+      }
+    });
+    return;
+  }
+
   if(req.method === 'POST' && req.url === '/api/homework'){
     // 한글이 조각나서 오면 문자열 이어붙이기로는 깨진다. 버퍼로 모아 한 번에 해석한다.
     const chunks = [];

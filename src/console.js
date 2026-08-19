@@ -9,6 +9,8 @@ import { getSimMin } from './sim.js';
    본부장이 지시를 받으면 담당자를 정한다. 대표님이 특정 직원을 지목하지 않은 경우
    키워드로 담당자를 찾고, 못 찾으면 해당 지역/기능 팀장에게 보낸다. */
 const ROUTE = [
+  // 번역은 지역 키워드보다 먼저 본다 — "스페인어로 번역" 이 스페인 지역팀으로 새지 않게
+  [/번역|현지어로|다른\s*언어/i,'송하린'],
   [/아르헨|부에노스|ANMAT/i,'나윤호'],
   [/스페인|EU|유럽|CPNP|전시회/i,'진세아'],
   [/두바이|사우디|GCC|중동|할랄/i,'하람'],
@@ -83,6 +85,14 @@ async function dispatch(text){
     return;
   }
 
+  // 번역팀에 온 지시도 같다. 번역은 파일이 있어야 시작되므로 업로드 창을 띄운다.
+  if(s.t === 'trans'){
+    const { openTranslateFor } = await import('./transdesk.js');
+    $('out').innerHTML = `<span class="who">${name} · ${s.r}</span>\n번역할 PPT 를 올려 주세요. 업로드 창을 띄웠습니다.`;
+    openTranslateFor(text);
+    return;
+  }
+
   /* 1) 본부장이 팀장에게 걸어가 전달한다 — 기다리지 않는다.
      왕복 도보가 16초라 await 하면 그동안 화면이 죽은 것처럼 보인다. 연출은 뒤에서 돌린다. */
   hqDispatch(text, name, simMin);
@@ -145,6 +155,7 @@ function initMention(){
       <div class="mItem${i===cur?' on':''}" data-n="${s.n}">
         <b>${s.n}</b><span>${s.rank} · ${s.r}</span>
         ${s.docPro ? '<em class="mTag">문서제작실</em>' : ''}
+        ${s.t === 'trans' ? '<em class="mTag">번역실</em>' : ''}
       </div>`).join('');
     box.style.display = '';
     box.querySelectorAll('.mItem').forEach(el => {

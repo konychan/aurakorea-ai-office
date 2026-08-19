@@ -46,6 +46,15 @@ function teamProp(kind){
         <circle cx="4" cy="3.4" r="1.1" fill="#E56A92"/><circle cx="8" cy="2.6" r="1.1" fill="#6BE3E0"/>
         <circle cx="8.8" cy="6.4" r="1.1" fill="#E9B93F"/>
         <rect x="11" y="-1" width="1.6" height="10" rx=".8" fill="#8A6A48" transform="rotate(18 11 4)"/></g>`;
+    case 'dict':      // 번역팀 — 3개국어 사전 두 권 (책등에 언어 표시)
+      return `<g transform="translate(70 2)">
+        <rect x="0" y="3" width="14" height="4.4" rx=".8" fill="#C98A2E"/>
+        <rect x="0" y="3" width="14" height="1.4" rx=".7" fill="#E8B96A"/>
+        <text x="7" y="6.6" text-anchor="middle" font-size="3" fill="#FFF7E8">ES·EN</text>
+        <rect x="1" y="7.8" width="13" height="4.4" rx=".8" fill="#7A5A2E"/>
+        <rect x="1" y="7.8" width="13" height="1.4" rx=".7" fill="#A9803F"/>
+        <text x="7.5" y="11.4" text-anchor="middle" font-size="3" fill="#FFF7E8">KO</text>
+        <rect x="2" y="12.6" width="11" height="2.6" rx=".6" fill="#FDFCFA" stroke="#D9C9A8" stroke-width=".5"/></g>`;
     case 'folder':    // 지역팀 — 국가별 자료철
     default:
       return `<g transform="translate(72 4)">
