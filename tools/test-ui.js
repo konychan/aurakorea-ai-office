@@ -21,6 +21,15 @@ const check = (name, ok, detail = '') => {
   console.log(`${ok ? '통과' : '실패'}  ${name}${detail ? ' — ' + detail : ''}`);
 };
 
+/* 숙제 목록은 대표님의 실제 작업함이다. 테스트가 남긴 가짜 지시를 그대로 두면
+   시간마다 도는 클라우드 루틴이 그걸 진짜로 처리해 토큰을 쓴다. 끝나면 원래대로 되돌린다. */
+const HW = path.join(ROOT, 'data/homework.json');
+const hwBackup = require('fs').existsSync(HW) ? require('fs').readFileSync(HW, 'utf8') : null;
+const restoreHomework = () => {
+  if(hwBackup !== null) require('fs').writeFileSync(HW, hwBackup, 'utf8');
+};
+process.on('exit', restoreHomework);
+
 (async () => {
   let server = null;
   if(!(await alive())){
