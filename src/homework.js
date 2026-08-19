@@ -22,8 +22,12 @@ export async function fileHomework({ title, assignee, team }){
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(item),
     });
-    if(res.ok) return 'server';
-  }catch(e){ /* 배포본에는 이 경로가 없다 — 아래 로컬 보관으로 넘어간다 */ }
+    // 서버가 200을 주면서 ok:false 로 실패를 알릴 수 있다 (토큰 미설정 등) — 본문까지 확인한다
+    if(res.ok){
+      const j = await res.json().catch(() => ({ ok: true }));
+      if(j.ok !== false) return 'server';
+    }
+  }catch(e){ /* 연결 자체가 안 되면 아래 로컬 보관으로 넘어간다 */ }
   save([{ ...item, id: 'hw' + Date.now() }, ...load()]);
   return 'local';
 }
