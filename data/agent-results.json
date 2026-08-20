@@ -1,21 +1,28 @@
 {
   "유래인": {
-    "text": "이번엔 스페인·남유럽 시장을 조사했습니다. 코트라는 롯데홈쇼핑과 함께 지난 5월 마드리드에서 '2026 대한민국 브랜드 엑스포 in 남유럽'을 열어 스페인을 거점으로 포르투갈·그리스 등 남유럽과 북아프리카까지 판로를 넓히고 있습니다. 6월엔 'K-EXPO SPAIN 2026'에 인천 뷰티기업 8곳이 참가해 이틀간 81건, 325만 유로(약 56억원) 규모의 수출상담을 성사시켰습니다. 최근 3년간 한국 화장품의 대(對)EU 수출은 2억8천만 달러에서 11억3천만 달러로 4배(305%) 폭증했고, 세포라·두글라스 같은 대형 유통망도 한국관을 찾고 있습니다. GCC에 이어 남유럽이 새로운 K뷰티 격전지로 떠오르는 만큼, 스페인 유통 파트너 발굴도 검토할 만합니다.",
+    "headline": "스페인 성장 중 반면 아르헨티나는 초기 진출 단계, 남미 기회 점차 확대",
+    "text": "스페인은 유럽 K-뷰티 시장 가운데 한국 화장품 수출이 지난 몇 년간 229% 성장하며 급성장하고 있고, Aromatica·Benton 같은 한국 브랜드가 인기다. 아르헨티나는 2024년 한국산 화장품·화장용품 수입액이 $3.19M으로 아직 초기 단계지만, 브라질·멕시코 등 남미 지역 전체에서 한국 화장품 수입 비중이 가파르게 상승하는 추세다. 유럽 화장품 수출은 올 상반기 처음 북미를 넘어 국제 경쟁력이 증명되고 있다.",
+    "keyPoints": [
+      "스페인: K-뷰티 수출 3년간 229% 성장, Aromatica·Benton 성공 사례",
+      "아르헨티나: 2024년 수입액 $3.19M으로 초기 단계이나 성장 잠재력 높음",
+      "남미 전역: 브라질·멕시코 중심 한국 화장품 수입 급증 추세"
+    ],
+    "watchOut": "아르헨티나는 주요 공급국이 브라질·프랑스·미국인 점 고려, 현지화 전략 필수",
     "sources": [
       {
-        "title": "K-뷰티 열풍 스페인까지…코트라·롯데, 남유럽 판로 넓힌다 - 헤럴드경제",
-        "url": "https://biz.heraldcorp.com/article/10759816"
+        "title": "성장하는 스페인 화장품 시장 - KOTRA 해외시장뉴스",
+        "url": "https://news.kotra.or.kr/user/globalBbs/kotranews/782/globalBbsDataView.do?setIdx=243&dataIdx=166175"
       },
       {
-        "title": "인천시, 스페인 K-EXPO서 56억 수출상담…뷰티기업 유럽 판로 모색 - 베타뉴스",
-        "url": "https://www.betanews.net/article/view/beta202606200012"
+        "title": "스페인, 확산하는 'K-뷰티' 열풍 - KITA",
+        "url": "https://www.kita.net/board/totalTradeNews/totalTradeNewsDetail.do;JSESSIONID_KITA=F45A5500C0E003201DE39A54061B042F.Hyper?no=72166&siteId=1"
       },
       {
-        "title": "K-뷰티, EU 수출 3년 새 4배… 유럽 시장 급부상 - 디지털타임스",
-        "url": "https://www.dt.co.kr/article/12054469"
+        "title": "Argentine imports from Korea (cosmetics, toiletries) - Trading Economics",
+        "url": "https://tradingeconomics.com/argentina/imports/south-korea/essential-oils-perfumes-cosmetics-toileteries"
       }
     ],
-    "updatedAt": "2026-08-18T10:00:00+09:00",
+    "updatedAt": "2026-08-20T09:05:56.936+09:00",
     "note": "Claude 클라우드 스케줄러가 자동으로 갱신한 결과입니다."
   },
   "박세렌": {
